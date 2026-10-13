@@ -108,14 +108,14 @@ function ensureDefaultWorkout(){
  }
  const freshDefault=createDefaultWorkout();
  const existingDefault=savedTimers.find(t=>t.name==='MMA 3:30');
- if(existingDefault && JSON.stringify(existingDefault.blocks)!==JSON.stringify(freshDefault.blocks)){existingDefault.blocks=freshDefault.blocks;existingDefault.updatedAt=Date.now();changed=true}
+ if(existingDefault && JSON.stringify(existingDefault.blocks)!==JSON.stringify(freshDefault.blocks)){existingDefault.blocks=JSON.parse(JSON.stringify(freshDefault.blocks));existingDefault.updatedAt=Date.now();changed=true}
  const mma050=savedTimers.find(t=>t.name==='MMA 0:50');
  if(!mma050){savedTimers.push(createMMA050Workout());changed=true}
  else {
   const fresh050=createMMA050Workout();
-  if(JSON.stringify(mma050.blocks)!==JSON.stringify(fresh050.blocks)){mma050.blocks=fresh050.blocks;mma050.updatedAt=Date.now();changed=true}
+  if(JSON.stringify(mma050.blocks)!==JSON.stringify(fresh050.blocks)){mma050.blocks=JSON.parse(JSON.stringify(fresh050.blocks));mma050.updatedAt=Date.now();changed=true}
  }
- if(changed){preset.updatedAt=Date.now();persistSavedTimers()}
+ if(changed){persistSavedTimers()}
 }
 function encodeTimerData(data){return btoa(unescape(encodeURIComponent(JSON.stringify(data)))).replaceAll('+','-').replaceAll('/','_').replace(/=+$/,'')}
 function decodeTimerData(encoded){let base=encoded.replaceAll('-','+').replaceAll('_','/');while(base.length%4)base+='=';return JSON.parse(decodeURIComponent(escape(atob(base))))}
