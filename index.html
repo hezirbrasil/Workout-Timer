@@ -65,7 +65,7 @@ function render(){
  el.querySelector('.up').onclick=()=>moveBlock(bi,-1);el.querySelector('.down').onclick=()=>moveBlock(bi,1);
  el.querySelector('.del').onclick=()=>{if(confirm('Excluir o bloco "'+b.name+'" e seus rounds?')){blocks.splice(bi,1);reindex();save();render()}};
  el.querySelector('.addInside').onclick=()=>{b.rounds.push({name:'Round '+(b.rounds.length+1),duration:50,rest:10});b.open=true;save();render()};
- el.querySelector('.duplicate').onclick=()=>{blocks.splice(bi+1,0,{name:b.name+' (cópia)',open:true,rounds:b.rounds.map(r=>({...r}))});save();render()};
+ el.querySelector('.duplicate').onclick=()=>{const copy={name:'Bloco '+(bi+2),open:true,rounds:b.rounds.map(r=>({...r}))};blocks.splice(bi+1,0,copy);blocks.forEach((block,i)=>{if(/^Bloco \d+$/.test(block.name))block.name='Bloco '+(i+1)});save();render()};
  const rh=el.querySelector('.rounds');
  b.rounds.forEach((r,ri)=>{
  const card=document.createElement('div');card.style.cssText='margin-top:10px;padding:12px;background:#08060c;border:1px solid #2e1b40;border-radius:12px';
