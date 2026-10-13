@@ -46,7 +46,7 @@ function loadSavedTimers(){try{const x=JSON.parse(localStorage.getItem('round-sa
 function persistSavedTimers(){try{localStorage.setItem('round-saved-timers-v1',JSON.stringify(savedTimers))}catch(e){alert('Não foi possível salvar. O armazenamento do navegador pode estar cheio.')}}
 function createDefaultWorkout(){
  const rounds=(prefix,count,duration=50,rest=10)=>Array.from({length:count},(_,i)=>({name:prefix+' '+(i+1),duration,rest}));
- return {name:'Treino completo MMA',updatedAt:Date.now(),blocks:[
+ return {name:'MMA 3:30',updatedAt:Date.now(),blocks:[
   {name:'Aquecimento',open:false,rounds:[{name:'Aquecimento',duration:180,rest:0}]},
   {name:'Descanso',open:false,rounds:[{name:'Descanso',duration:30,rest:0}]},
   {name:'Round 1',open:false,rounds:[{name:'Round 1',duration:210,rest:30}]},
@@ -61,17 +61,39 @@ function createDefaultWorkout(){
   {name:'MMA — 8 rounds',open:false,rounds:rounds('MMA',8,50,10)}
  ]};
 }
+function createMMA050Workout(){
+ const rounds=(prefix,count)=>Array.from({length:count},(_,i)=>({name:prefix+' '+(i+1),duration:50,rest:10}));
+ const block=(name)=>({name,open:false,rounds:rounds('Round',4)});
+ const rest30=()=>({name:'Descanso',open:false,rounds:[{name:'Descanso',duration:30,rest:0}]});
+ const exchange=()=>({name:'Troca',open:false,rounds:[{name:'Troca',duration:120,rest:0}]});
+ return {name:'MMA 0:50',updatedAt:Date.now(),blocks:[
+  {name:'Aquecimento',open:false,rounds:[{name:'Aquecimento',duration:180,rest:0}]},
+  rest30(),
+  block('Bloco 1'),rest30(),
+  block('Bloco 2'),rest30(),
+  block('Bloco 3'),rest30(),
+  exchange(),
+  block('Bloco 4'),rest30(),
+  block('Bloco 5'),rest30(),
+  block('Bloco 6'),rest30(),
+  exchange(),
+  block('Bloco 7'),rest30(),
+  block('Bloco 8')
+ ]};
+}
 function ensureDefaultWorkout(){
- let preset=savedTimers.find(t=>t.name==='Treino completo MMA');
- if(!preset){savedTimers.unshift(createDefaultWorkout());persistSavedTimers();return}
  let changed=false;
+ let preset=savedTimers.find(t=>t.name==='Treino completo MMA'||t.name==='MMA 3:30');
+ if(!preset){preset=createDefaultWorkout();savedTimers.unshift(preset);changed=true}
+ else if(preset.name!=='MMA 3:30'){preset.name='MMA 3:30';changed=true}
  for(const block of (preset.blocks||[])){
   if(block.name==='Round 1'||block.name==='Round 2'||block.name==='Round final'){
    const round=(block.rounds||[])[0];
    if(round&&Number(round.rest)!==30){round.rest=30;changed=true}
   }
  }
- if(changed){preset.updatedAt=Date.now();persistSavedTimers()}
+ if(!savedTimers.some(t=>t.name==='MMA 0:50')){savedTimers.push(createMMA050Workout());changed=true}
+ if(changed)persistSavedTimers();
 }
 function encodeTimerData(data){return btoa(unescape(encodeURIComponent(JSON.stringify(data)))).replaceAll('+','-').replaceAll('/','_').replace(/=+$/,'')}
 function decodeTimerData(encoded){let base=encoded.replaceAll('-','+').replaceAll('_','/');while(base.length%4)base+='=';return JSON.parse(decodeURIComponent(escape(atob(base))))}
