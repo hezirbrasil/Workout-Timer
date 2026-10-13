@@ -46,6 +46,7 @@ function loadSavedTimers(){try{const x=JSON.parse(localStorage.getItem('round-sa
 function persistSavedTimers(){try{localStorage.setItem('round-saved-timers-v1',JSON.stringify(savedTimers))}catch(e){alert('Não foi possível salvar. O armazenamento do navegador pode estar cheio.')}}
 function createDefaultWorkout(){
  const rounds=(prefix,count,duration=50,rest=10)=>Array.from({length:count},(_,i)=>({name:prefix+' '+(i+1),duration,rest}));
+ const addActivePauses=(prefix,count)=>{const out=[];for(let i=1;i<=count;i++){out.push({name:prefix+' '+i,duration:50,rest:10});if(i%4===0&&i<count)out.push({name:'Pausa ativa',duration:30,rest:0})}return out};
  return {name:'MMA 3:30',updatedAt:Date.now(),blocks:[
   {name:'Aquecimento',open:false,rounds:[{name:'Aquecimento',duration:180,rest:0}]},
   {name:'Descanso',open:false,rounds:[{name:'Descanso',duration:30,rest:0}]},
@@ -53,12 +54,12 @@ function createDefaultWorkout(){
   {name:'Round 2',open:false,rounds:[{name:'Round 2',duration:210,rest:30}]},
   {name:'Bloco 3',open:false,rounds:rounds('Round',4,50,10)},
   {name:'Troca',open:false,rounds:[{name:'Troca',duration:120,rest:0}]},
-  {name:'MMA — 12 rounds',open:false,rounds:rounds('MMA',12,50,10)},
+  {name:'MMA — 12 rounds',open:false,rounds:addActivePauses('MMA',12)},
   {name:'Troca',open:false,rounds:[{name:'Troca',duration:120,rest:0}]},
-  {name:'Treino — 4 rounds',open:false,rounds:rounds('Treino',4,50,10)},
+  {name:'Treino — 4 rounds',open:false,rounds:rounds('Treino',4,50,40)},
   {name:'Round final',open:false,rounds:[{name:'Round final',duration:210,rest:30}]},
   {name:'Troca',open:false,rounds:[{name:'Troca',duration:120,rest:0}]},
-  {name:'MMA — 8 rounds',open:false,rounds:rounds('MMA',8,50,10)}
+  {name:'MMA — 8 rounds',open:false,rounds:addActivePauses('MMA',8)}
  ]};
 }
 function createMMA050Workout(){
@@ -85,15 +86,27 @@ function ensureDefaultWorkout(){
  let changed=false;
  let preset=savedTimers.find(t=>t.name==='Treino completo MMA'||t.name==='MMA 3:30');
  if(!preset){preset=createDefaultWorkout();savedTimers.unshift(preset);changed=true}
- else if(preset.name!=='MMA 3:30'){preset.name='MMA 3:30';changed=true}
- for(const block of (preset.blocks||[])){
-  if(block.name==='Round 1'||block.name==='Round 2'||block.name==='Round final'){
-   const round=(block.rounds||[])[0];
-   if(round&&Number(round.rest)!==30){round.rest=30;changed=true}
+ else {
+  if(preset.name!=='MMA 3:30'){preset.name='MMA 3:30';changed=true}
+  const fresh=createDefaultWorkout();
+  const getBlock=(name)=>preset.blocks.find(b=>b.name===name);
+  const freshBlock=(name)=>fresh.blocks.find(b=>b.name===name);
+  for(const name of ['Aquecimento','Descanso','Round 1','Round 2','Bloco 3','MMA — 12 rounds','Treino — 4 rounds','Round final','MMA — 8 rounds']){
+   const old=getBlock(name),next=freshBlock(name);
+   if(old&&next){
+    const before=JSON.stringify(old.rounds);
+    if(name==='MMA — 12 rounds'||name==='MMA — 8 rounds'||name==='Treino — 4 rounds'||name==='Round 1'||name==='Round 2'||name==='Round final'||name==='Aquecimento'||name==='Descanso'||name==='Bloco 3')old.rounds=next.rounds;
+    if(before!==JSON.stringify(old.rounds))changed=true;
+   }
   }
+  const blocks=preset.blocks;
+  // Ensure pause/exchange blocks and their order match the current standard template.
+  const template=fresh.blocks;
+  const desiredNames=template.map(b=>b.name);
+  if(JSON.stringify(blocks.map(b=>b.name))!==JSON.stringify(desiredNames)){preset.blocks=template;changed=true}
  }
  if(!savedTimers.some(t=>t.name==='MMA 0:50')){savedTimers.push(createMMA050Workout());changed=true}
- if(changed)persistSavedTimers();
+ if(changed){preset.updatedAt=Date.now();persistSavedTimers()}
 }
 function encodeTimerData(data){return btoa(unescape(encodeURIComponent(JSON.stringify(data)))).replaceAll('+','-').replaceAll('/','_').replace(/=+$/,'')}
 function decodeTimerData(encoded){let base=encoded.replaceAll('-','+').replaceAll('_','/');while(base.length%4)base+='=';return JSON.parse(decodeURIComponent(escape(atob(base))))}
