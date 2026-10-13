@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#09090d"><title>ROUND — Fitness Timer</title>
+<style>
+:root{--bg:#09090d;--panel:#13131b;--panel2:#1b1a25;--purple:#8b5cf6;--purple2:#a78bfa;--text:#f5f3ff;--muted:#9b97ad;--line:#2a2738;--danger:#f87171}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
+button,input,select{font:inherit}button{cursor:pointer;border:0;color:inherit}.app{max-width:760px;margin:auto;padding:20px 16px 44px}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}.brand{display:flex;gap:10px;align-items:center;font-weight:900;letter-spacing:2px;font-size:18px}.mark{width:34px;height:34px;border:2px solid var(--purple);border-radius:10px;display:grid;place-items:center;color:var(--purple2);font-weight:900;transform:rotate(0deg)}.tag{color:var(--muted);font-size:11px;letter-spacing:1.4px}
+.timer{background:linear-gradient(145deg,#171420,#101016);border:1px solid #302642;border-radius:24px;padding:25px 20px 20px;text-align:center;box-shadow:0 16px 50px #0004}
+.phase{display:inline-flex;align-items:center;gap:8px;background:#281d40;color:#c4b5fd;border-radius:99px;padding:7px 13px;font-size:11px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase}.dot{width:7px;height:7px;border-radius:50%;background:var(--purple2)}
+.clock{font-size:clamp(64px,18vw,110px);line-height:1.08;font-weight:850;letter-spacing:-5px;font-variant-numeric:tabular-nums;margin:18px 0 4px}.current-name{font-size:16px;font-weight:700;min-height:24px}.subline{font-size:12px;color:var(--muted);margin-top:6px}.progress{height:4px;background:#292532;border-radius:9px;overflow:hidden;margin:20px 0}.progress>div{height:100%;width:0;background:var(--purple);transition:width .15s linear}
+.controls{display:flex;justify-content:center;gap:10px;align-items:center}.control{background:#262333;border:1px solid #383247;border-radius:14px;min-width:48px;height:48px;font-size:18px}.control.primary{background:var(--purple);color:white;font-size:15px;font-weight:800;padding:0 30px;min-width:142px}.control:active,.btn:active{transform:scale(.98)}
+.section-head{display:flex;justify-content:space-between;align-items:center;margin:27px 2px 12px}.section-head h2{font-size:14px;letter-spacing:.5px;margin:0}.muted{color:var(--muted);font-size:12px}.btn{border:1px solid #41345d;background:#211a31;color:#d8ccff;padding:10px 13px;border-radius:11px;font-size:12px;font-weight:750}.btn.main{background:var(--purple);border-color:var(--purple);color:white}.btn.ghost{background:transparent;border-color:var(--line);color:var(--muted)}.btn.danger{color:var(--danger);border-color:#513038;background:#26171c}
+.empty{border:1px dashed #393346;border-radius:18px;padding:26px 16px;text-align:center;color:var(--muted);font-size:13px;line-height:1.7}.empty strong{display:block;color:var(--text);font-size:15px;margin-bottom:5px}
+.blocks{display:flex;flex-direction:column;gap:10px}.block{border:1px solid var(--line);background:var(--panel);border-radius:16px;overflow:hidden}.block-top{display:flex;gap:10px;align-items:center;padding:13px}.block-index{width:30px;height:30px;flex:0 0 30px;display:grid;place-items:center;border-radius:9px;background:#2a2040;color:#c4b5fd;font-size:12px;font-weight:800}.block-title{min-width:0;flex:1}.block-title strong{display:block;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.block-title small{color:var(--muted);font-size:11px;display:block;margin-top:4px}.block-actions{display:flex;gap:4px}.iconbtn{width:30px;height:30px;border-radius:8px;background:var(--panel2);color:#b9b3ca;font-size:14px}.block-body{padding:0 13px 13px;display:none}.block.open .block-body{display:block}.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.field{display:flex;flex-direction:column;gap:6px}.field label{font-size:10px;color:var(--muted);font-weight:750;letter-spacing:.8px;text-transform:uppercase}.field input,.field select{width:100%;min-width:0;background:#0c0b12;border:1px solid #353044;border-radius:9px;padding:10px;color:var(--text);outline:none}.field input:focus,.field select:focus{border-color:var(--purple)}.block-footer{display:flex;justify-content:space-between;align-items:center;margin-top:12px;gap:8px}.footer-actions{display:flex;gap:7px;flex-wrap:wrap}.total{font-size:11px;color:var(--muted)}.bottom-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}.bottom-actions .btn{flex:1}.hint{font-size:11px;color:#777286;text-align:center;margin-top:22px}
+@media(min-width:600px){.app{padding-top:28px}.timer{padding:30px}.fields{grid-template-columns:repeat(4,minmax(0,1fr))}.field.namefield{grid-column:span 2}}
+</style>
+</head>
+<body><main class="app">
+<header><div class="brand"><div class="mark">R</div><span>ROUND</span></div><span class="tag">FITNESS TIMER</span></header>
+<section class="timer" aria-label="Cronômetro">
+<div class="phase"><span class="dot"></span><span id="phase">PRONTO</span></div>
+<div class="clock" id="clock">00:00</div><div class="current-name" id="currentName">Adicione seu primeiro round</div><div class="subline" id="counter">Nenhum round configurado</div>
+<div class="progress"><div id="progress"></div></div>
+<div class="controls"><button class="control" id="prev" aria-label="Anterior">⏮</button><button class="control primary" id="play">▶ INICIAR</button><button class="control" id="reset" aria-label="Reiniciar">↺</button><button class="control" id="next" aria-label="Próximo">⏭</button></div>
+</section>
+<div class="section-head"><h2>SEU TREINO</h2><span class="muted" id="summary">0 blocos · 0 rounds</span></div>
+<div id="blocks" class="blocks"></div>
+<div class="bottom-actions"><button class="btn main" id="addBlock">＋ Adicionar bloco</button><button class="btn" id="addRound">＋ Adicionar round</button><button class="btn ghost" id="clearAll">Limpar treino</button></div>
+<p class="hint">Edite nomes, tempos e ordem. Suas alterações ficam salvas neste dispositivo.</p>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+let blocks=[],active=0,remaining=0,running=false,interval=null,lastStamp=0;
+const fmt=s=>{s=Math.max(0,Math.ceil(s));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
+const allRounds=()=>blocks.flatMap((b,bi)=>b.rounds.map((r,ri)=>({...r,bi,ri,blockName:b.name})));
+const rounds=()=>allRounds();
+function save(){try{localStorage.setItem('round-fitness-v1',JSON.stringify(blocks))}catch(e){}}
+function load(){/* começa vazio por padrão; não cria rounds automaticamente */}
+function totalSeconds(r){return Math.max(1,Number(r?.duration)||50)}
+function current(){return rounds()[active]}
+function stop(){running=false;if(interval)clearInterval(interval);interval=null;lastStamp=0;$('play').textContent='▶ INICIAR'}
+function renderTimer(){
+ const list=rounds(),r=list[active];
+ if(!r){$('clock').textContent='00:00';$('phase').textContent='PRONTO';$('currentName').textContent='Adicione seu primeiro round';$('counter').textContent='Nenhum round configurado';$('progress').style.width='0%';$('play').disabled=true;$('play').style.opacity='.45';return}
+ $('play').disabled=false;$('play').style.opacity='1';if(remaining<=0&&!running)remaining=totalSeconds(r);
+ $('clock').textContent=fmt(remaining);$('phase').textContent=running?'EM ANDAMENTO':(remaining<totalSeconds(r)?'PAUSADO':'PRONTO');$('currentName').textContent=r.name||'Round';$('counter').textContent='Round '+(active+1)+' de '+list.length+' · '+r.blockName;$('progress').style.width=(100*(1-remaining/totalSeconds(r)))+'%';
+}
+function render(){
+ const host=$('blocks');host.innerHTML='';const n=rounds().length;$('summary').textContent=blocks.length+' bloco'+(blocks.length===1?'':'s')+' · '+n+' round'+(n===1?'':'s');
+ if(!blocks.length){host.innerHTML='<div class="empty"><strong>Seu treino começa aqui</strong>Nenhum bloco ou round foi criado.<br>Adicione um bloco ou round e personalize tudo.</div>';renderTimer();return}
+ blocks.forEach((b,bi)=>{
+ const el=document.createElement('section');el.className='block'+(b.open?' open':'');
+ const duration=b.rounds.reduce((s,r)=>s+Number(r.duration||0)+Number(r.rest||0),0);
+ el.innerHTML='<div class="block-top"><div class="block-index">'+String(bi+1).padStart(2,'0')+'</div><div class="block-title"><strong></strong><small></small></div><div class="block-actions"><button class="iconbtn up" title="Mover para cima">↑</button><button class="iconbtn down" title="Mover para baixo">↓</button><button class="iconbtn toggle" title="Editar bloco">✎</button><button class="iconbtn del" title="Excluir bloco">×</button></div></div><div class="block-body"><div class="fields"><div class="field namefield"><label>Nome do bloco</label><input class="bname" maxlength="60"></div></div><div class="rounds"></div><div class="block-footer"><span class="total"></span><div class="footer-actions"><button class="btn addInside">＋ Round</button><button class="btn ghost duplicate">Duplicar bloco</button></div></div></div>';
+ el.querySelector('.block-title strong').textContent=b.name;el.querySelector('.block-title small').textContent=b.rounds.length+' round(s) · '+fmt(duration);
+ el.querySelector('.bname').value=b.name;el.querySelector('.total').textContent='Tempo do bloco: '+fmt(duration);
+ el.querySelector('.bname').oninput=e=>{b.name=e.target.value||'Bloco sem nome';el.querySelector('.block-title strong').textContent=b.name;save();renderTimer()};
+ el.querySelector('.toggle').onclick=()=>{b.open=!b.open;render()};
+ el.querySelector('.up').onclick=()=>moveBlock(bi,-1);el.querySelector('.down').onclick=()=>moveBlock(bi,1);
+ el.querySelector('.del').onclick=()=>{if(confirm('Excluir o bloco "'+b.name+'" e seus rounds?')){blocks.splice(bi,1);reindex();save();render()}};
+ el.querySelector('.addInside').onclick=()=>{b.rounds.push({name:'Round '+(b.rounds.length+1),duration:50,rest:10});b.open=true;save();render()};
+ el.querySelector('.duplicate').onclick=()=>{blocks.splice(bi+1,0,{name:b.name+' (cópia)',open:true,rounds:b.rounds.map(r=>({...r}))});save();render()};
+ const rh=el.querySelector('.rounds');
+ b.rounds.forEach((r,ri)=>{
+ const card=document.createElement('div');card.style.cssText='margin-top:10px;padding:12px;background:#0e0d14;border:1px solid #2a2738;border-radius:12px';
+ card.innerHTML='<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px"><strong style="font-size:11px;color:#c4b5fd;flex:1">ROUND '+(ri+1)+'</strong><button class="iconbtn ru" title="Mover round para cima">↑</button><button class="iconbtn rd" title="Mover round para baixo">↓</button><button class="iconbtn dup" title="Duplicar round">⧉</button><button class="iconbtn delr" title="Excluir round">×</button></div><div class="fields"><div class="field namefield"><label>Nome</label><input class="rname" maxlength="60"></div><div class="field"><label>Trabalho (seg)</label><input class="dur" type="number" min="1" max="3600"></div><div class="field"><label>Descanso (seg)</label><input class="rest" type="number" min="0" max="3600"></div></div>';
+ card.querySelector('.rname').value=r.name;card.querySelector('.dur').value=r.duration;card.querySelector('.rest').value=r.rest;
+ const update=()=>{save();renderTimer();el.querySelector('.block-title small').textContent=b.rounds.length+' round(s) · '+fmt(b.rounds.reduce((s,x)=>s+Number(x.duration||0)+Number(x.rest||0),0))};
+ card.querySelector('.rname').oninput=e=>{r.name=e.target.value||'Round';update()};
+ card.querySelector('.dur').onchange=e=>{r.duration=Math.max(1,Math.min(3600,Number(e.target.value)||1));if(activeRoundIs(bi,ri))remaining=r.duration;update()};
+ card.querySelector('.rest').onchange=e=>{r.rest=Math.max(0,Math.min(3600,Number(e.target.value)||0));update()};
+ card.querySelector('.ru').onclick=()=>moveRound(bi,ri,-1);card.querySelector('.rd').onclick=()=>moveRound(bi,ri,1);
+ card.querySelector('.dup').onclick=()=>{b.rounds.splice(ri+1,0,{...r,name:r.name+' (cópia)'});save();render()};
+ card.querySelector('.delr').onclick=()=>{b.rounds.splice(ri,1);if(!b.rounds.length){blocks.splice(bi,1)}reindex();save();render()};
+ rh.appendChild(card);
+ });
+ host.appendChild(el);
+ });
+ renderTimer();
+}
+function activeRoundIs(bi,ri){const r=current();return r&&r.bi===bi&&r.ri===ri}
+function reindex(){active=Math.min(active,Math.max(0,rounds().length-1));remaining=current()?totalSeconds(current()):0;stop()}
+function moveBlock(i,d){const j=i+d;if(j<0||j>=blocks.length)return;[blocks[i],blocks[j]]=[blocks[j],blocks[i]];save();render()}
+function moveRound(bi,ri,d){const j=ri+d;if(j<0||j>=blocks[bi].rounds.length)return;[blocks[bi].rounds[ri],blocks[bi].rounds[j]]=[blocks[bi].rounds[j],blocks[bi].rounds[ri]];save();render()}
+function addBlock(){blocks.push({name:'Bloco '+(blocks.length+1),open:true,rounds:[]});save();render()}
+function addRound(){if(!blocks.length)addBlock();const b=blocks[blocks.length-1];b.rounds.push({name:'Round '+(b.rounds.length+1),duration:50,rest:10});b.open=true;save();render()}
+function advance(){const list=rounds();if(!list.length)return;active=(active+1)%list.length;remaining=totalSeconds(current());renderTimer()}
+function back(){const list=rounds();if(!list.length)return;active=(active-1+list.length)%list.length;remaining=totalSeconds(current());renderTimer()}
+function tick(){const now=Date.now();if(!lastStamp)lastStamp=now;const delta=(now-lastStamp)/1000;lastStamp=now;remaining-=delta;if(remaining<=0){advance();if(!running)return;remaining=totalSeconds(current())}renderTimer()}
+function toggle(){if(!rounds().length)return;if(running){stop();renderTimer()}else{running=true;lastStamp=Date.now();$('play').textContent='Ⅱ PAUSAR';interval=setInterval(tick,100)}}
+$('addBlock').onclick=addBlock;$('addRound').onclick=addRound;$('play').onclick=toggle;$('next').onclick=()=>{advance();};$('prev').onclick=back;
+$('reset').onclick=()=>{stop();remaining=current()?totalSeconds(current()):0;renderTimer()};
+$('clearAll').onclick=()=>{if(blocks.length&&confirm('Apagar todos os blocos e rounds?')){stop();blocks=[];active=0;remaining=0;save();render()}};
+load();render();
+</script></body></html>
