@@ -53,12 +53,12 @@ function createDefaultWorkout(){
   {name:'Round 1',open:false,rounds:[{name:'Round 1',duration:210,rest:60}]},
   {name:'Round 2',open:false,rounds:[{name:'Round 2',duration:210,rest:60}]},
   {name:'Bloco 3',open:false,rounds:rounds('Round',4,50,10)},
-  {name:'Troca',open:false,rounds:[{name:'Troca',duration:120,rest:0}]},
+  {name:'Troca',open:false,rounds:[{name:'Troca',duration:110,rest:0}]},
   {name:'MMA — 12 rounds',open:false,rounds:addActivePauses('MMA',12)},
-  {name:'Troca',open:false,rounds:[{name:'Troca',duration:120,rest:0}]},
+  {name:'Troca',open:false,rounds:[{name:'Troca',duration:110,rest:0}]},
   {name:'Treino — 4 rounds',open:false,rounds:rounds('Treino',4,50,10)},
   {name:'Round final',open:false,rounds:[{name:'Round final',duration:210,rest:60}]},
-  {name:'Troca',open:false,rounds:[{name:'Troca',duration:120,rest:0}]},
+  {name:'Troca',open:false,rounds:[{name:'Troca',duration:110,rest:0}]},
   {name:'MMA — 8 rounds',open:false,rounds:(()=>{const out=[];for(let i=1;i<=8;i++){out.push({name:'MMA '+i,duration:50,rest:10});if(i===4)out.push({name:'Pausa ativa',duration:30,rest:0})}return out})()}
 ,
   {name:'Fim',open:false,rounds:[{name:'Fim',duration:60,rest:0}]}
@@ -68,7 +68,7 @@ function createMMA050Workout(){
  const rounds=(prefix,count,rest=10)=>Array.from({length:count},(_,i)=>({name:prefix+' '+(i+1),duration:50,rest:10}));
  const block=(name)=>({name,open:false,rounds:[...rounds('Round',4,10),{name:'Pausa ativa',duration:30,rest:0}]});
  const rest30=()=>({name:'Descanso',open:false,rounds:[{name:'Descanso',duration:30,rest:0}]});
- const exchange=()=>({name:'Troca',open:false,rounds:[{name:'Troca',duration:120,rest:0}]});
+ const exchange=()=>({name:'Troca',open:false,rounds:[{name:'Troca',duration:110,rest:0}]});
  const fightBlock=(name,count)=>{const out=[];for(let i=1;i<=count;i++){out.push({name:'MMA '+i,duration:50,rest:10});if(i%4===0&&i<count)out.push({name:'Pausa ativa',duration:30,rest:0})}return {name,open:false,rounds:out}};
  return {name:'MMA 0:50',updatedAt:Date.now(),blocks:[
   rest30(),
