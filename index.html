@@ -34,7 +34,8 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 </main>
 <script>
 const $=id=>document.getElementById(id);
-let blocks=[],active=0,remaining=0,running=false,interval=null,lastStamp=0,phaseMode='work';\nlet savedTimers=[];
+let blocks=[],active=0,remaining=0,running=false,interval=null,lastStamp=0,phaseMode='work';
+let savedTimers=[];
 const fmt=s=>{s=Math.max(0,Math.ceil(s));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
 const allRounds=()=>blocks.flatMap((b,bi)=>b.rounds.map((r,ri)=>({...r,bi,ri,blockName:b.name})));
 const rounds=()=>allRounds();
