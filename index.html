@@ -59,7 +59,8 @@ function createDefaultWorkout(){
   {name:'Treino — 4 rounds',open:false,rounds:rounds('Treino',4,50,40)},
   {name:'Round final',open:false,rounds:[{name:'Round final',duration:210,rest:30}]},
   {name:'Troca',open:false,rounds:[{name:'Troca',duration:120,rest:0}]},
-  {name:'MMA — 8 rounds',open:false,rounds:addActivePauses('MMA',8)}
+  {name:'MMA — 8 rounds',open:false,rounds:addActivePauses('MMA',8)},
+  {name:'Ajuste final',open:false,rounds:[{name:'Ajuste final',duration:480,rest:0}]}
  ]};
 }
 function createMMA050Workout(){
@@ -70,15 +71,15 @@ function createMMA050Workout(){
  return {name:'MMA 0:50',updatedAt:Date.now(),blocks:[
   {name:'Aquecimento',open:false,rounds:[{name:'Aquecimento',duration:180,rest:0}]},
   rest30(),
-  block('Bloco 1',40),
-  block('Bloco 2',40),
-  block('Bloco 3',40),
+  block('Bloco 1',30),
+  block('Bloco 2',30),
+  block('Bloco 3',30),
   exchange(),
-  block('Bloco 4',40),
-  block('Bloco 5',40),
-  block('Bloco 6',40),
+  block('Bloco 4',30),
+  block('Bloco 5',30),
+  block('Bloco 6',30),
   exchange(),
-  block('Bloco 7',40),
+  block('Bloco 7',30),
   block('Bloco 8',10)
  ]};
 }
@@ -105,6 +106,9 @@ function ensureDefaultWorkout(){
   const desiredNames=template.map(b=>b.name);
   if(JSON.stringify(blocks.map(b=>b.name))!==JSON.stringify(desiredNames)){preset.blocks=template;changed=true}
  }
+ const freshDefault=createDefaultWorkout();
+ const existingDefault=savedTimers.find(t=>t.name==='MMA 3:30');
+ if(existingDefault && JSON.stringify(existingDefault.blocks)!==JSON.stringify(freshDefault.blocks)){existingDefault.blocks=freshDefault.blocks;existingDefault.updatedAt=Date.now();changed=true}
  const mma050=savedTimers.find(t=>t.name==='MMA 0:50');
  if(!mma050){savedTimers.push(createMMA050Workout());changed=true}
  else {
