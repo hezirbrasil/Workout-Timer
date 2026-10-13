@@ -67,20 +67,20 @@ function createMMA050Workout(){
  const block=(name)=>({name,open:false,rounds:rounds('Round',4,10)});
  const rest30=()=>({name:'Descanso',open:false,rounds:[{name:'Descanso',duration:30,rest:0}]});
  const exchange=()=>({name:'Troca',open:false,rounds:[{name:'Troca',duration:120,rest:0}]});
+ const fightBlock=(name,count)=>{const out=[];for(let i=1;i<=count;i++){out.push({name:'MMA '+i,duration:50,rest:10});if(i%4===0&&i<count)out.push({name:'Pausa ativa',duration:30,rest:0})}return {name,open:false,rounds:out}};
  return {name:'MMA 0:50',updatedAt:Date.now(),blocks:[
   {name:'Aquecimento',open:false,rounds:[{name:'Aquecimento',duration:180,rest:0}]},
   rest30(),
-  block('Bloco 1'),
-  block('Bloco 2'),
-  block('Bloco 3'),
+  fightBlock('Luta — 12 rounds',12),
   exchange(),
-  block('Bloco 4'),
-  block('Bloco 5'),
-  block('Bloco 6'),
+  block('Treino físico 1'),
+  block('Treino físico 2'),
+  block('Treino físico 3'),
   exchange(),
-  block('Bloco 7'),
-  block('Bloco 8'),
-  {name:'Ajuste de tempo',open:false,rounds:[{name:'Ajuste de tempo',duration:630,rest:0}]}
+  block('Treino físico 4'),
+  block('Treino físico 5'),
+  block('Treino físico 6'),
+  {name:'Ajuste de tempo',open:false,rounds:[{name:'Ajuste de tempo',duration:330,rest:0}]}
  ]};
 }
 function ensureDefaultWorkout(){
