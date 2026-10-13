@@ -48,7 +48,7 @@ function renderTimer(){
  if(!r){$('clock').textContent='00:00';$('phase').textContent='PRONTO';$('currentName').textContent='Adicione seu primeiro round';$('counter').textContent='Nenhum round configurado';$('progress').style.width='0%';$('clockRing').style.setProperty('--ring-progress','0%');$('play').disabled=true;$('play').style.opacity='.45';return}
  $('play').disabled=false;$('play').style.opacity='1';if(remaining<=0&&!running)remaining=phaseMode==='rest'?Math.max(0,Number(r.rest)||0):totalSeconds(r);
  const duration=Math.max(1,phaseMode==='rest'?(Number(r.rest)||1):totalSeconds(r));
- const elapsed=Math.max(0,Math.min(1,1-remaining/duration));
+ const elapsed=Math.max(0,Math.min(1,remaining/duration));
  $('clock').textContent=fmt(remaining);$('phase').textContent=phaseMode==='rest'?(running?'DESCANSO':'DESCANSO PAUSADO'):(running?'EM ANDAMENTO':(remaining<totalSeconds(r)?'PAUSADO':'PRONTO'));$('currentName').textContent=r.name||'Round';$('counter').textContent='Round '+(active+1)+' de '+list.length+' · '+r.blockName;$('progress').style.width=(elapsed*100)+'%';$('clockRing').style.setProperty('--ring-progress',(elapsed*100)+'%');
 }
 function render(){
