@@ -66,8 +66,9 @@ function ensureDefaultWorkout(){
  if(!preset){savedTimers.unshift(createDefaultWorkout());persistSavedTimers();return}
  let changed=false;
  for(const block of (preset.blocks||[])){
-  if(block.name==='Round 1'||block.name==='Round 2'){
-   for(const round of (block.rounds||[])){if(round.name===block.name&&Number(round.rest)!==30){round.rest=30;changed=true}}
+  if(block.name==='Round 1'||block.name==='Round 2'||block.name==='Round final'){
+   const round=(block.rounds||[])[0];
+   if(round&&Number(round.rest)!==30){round.rest=30;changed=true}
   }
  }
  if(changed){preset.updatedAt=Date.now();persistSavedTimers()}
