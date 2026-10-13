@@ -44,6 +44,24 @@ const rounds=()=>allRounds();
 function save(){try{localStorage.setItem('round-fitness-v1',JSON.stringify(blocks))}catch(e){}}
 function loadSavedTimers(){try{const x=JSON.parse(localStorage.getItem('round-saved-timers-v1')||'[]');savedTimers=Array.isArray(x)?x.filter(t=>t&&typeof t.name==='string'&&Array.isArray(t.blocks)):[]}catch(e){savedTimers=[]}}
 function persistSavedTimers(){try{localStorage.setItem('round-saved-timers-v1',JSON.stringify(savedTimers))}catch(e){alert('Não foi possível salvar. O armazenamento do navegador pode estar cheio.')}}
+function createDefaultWorkout(){
+ const rounds=(prefix,count,duration=50,rest=10)=>Array.from({length:count},(_,i)=>({name:prefix+' '+(i+1),duration,rest}));
+ return {name:'Treino completo MMA',updatedAt:Date.now(),blocks:[
+  {name:'Aquecimento',open:false,rounds:[{name:'Aquecimento',duration:180,rest:0}]},
+  {name:'Descanso',open:false,rounds:[{name:'Descanso',duration:30,rest:0}]},
+  {name:'Round 1',open:false,rounds:[{name:'Round 1',duration:210,rest:0}]},
+  {name:'Round 2',open:false,rounds:[{name:'Round 2',duration:210,rest:0}]},
+  {name:'Bloco 3',open:false,rounds:rounds('Round',4,50,10)},
+  {name:'Troca',open:false,rounds:[{name:'Troca',duration:120,rest:0}]},
+  {name:'MMA — 12 rounds',open:false,rounds:rounds('MMA',12,50,10)},
+  {name:'Troca',open:false,rounds:[{name:'Troca',duration:120,rest:0}]},
+  {name:'Treino — 4 rounds',open:false,rounds:rounds('Treino',4,50,10)},
+  {name:'Round final',open:false,rounds:[{name:'Round final',duration:210,rest:30}]},
+  {name:'Troca',open:false,rounds:[{name:'Troca',duration:120,rest:0}]},
+  {name:'MMA — 8 rounds',open:false,rounds:rounds('MMA',8,50,10)}
+ ]};
+}
+function ensureDefaultWorkout(){if(!savedTimers.some(t=>t.name==='Treino completo MMA')){savedTimers.unshift(createDefaultWorkout());persistSavedTimers()}}
 function encodeTimerData(data){return btoa(unescape(encodeURIComponent(JSON.stringify(data)))).replaceAll('+','-').replaceAll('/','_').replace(/=+$/,'')}
 function decodeTimerData(encoded){let base=encoded.replaceAll('-','+').replaceAll('_','/');while(base.length%4)base+='=';return JSON.parse(decodeURIComponent(escape(atob(base))))}
 function shareSavedLink(index){const t=savedTimers[index];if(!t)return;const payload={format:'round-timer',version:1,name:t.name,blocks:t.blocks};const url=new URL(location.href);url.hash='timer='+encodeTimerData(payload);const shareUrl=url.href;if(navigator.share){navigator.share({title:'ROUND — '+t.name,text:'Importe este treino no ROUND Fitness Timer:',url:shareUrl}).catch(err=>{if(err.name!=='AbortError')copyShareLink(shareUrl)})}else copyShareLink(shareUrl)}
@@ -117,5 +135,5 @@ function toggle(){if(!rounds().length)return;if(running){stop();renderTimer()}el
 $('addBlock').onclick=addBlock;$('addRound').onclick=addRound;$('saveTimer').onclick=saveCurrentTimer;$('importTimerBtn').onclick=()=>$('importTimerFile').click();$('importTimerFile').onchange=e=>{importTimerFile(e.target.files?.[0]);e.target.value=''};$('play').onclick=toggle;$('next').onclick=()=>{advance();};$('prev').onclick=back;
 $('reset').onclick=()=>{stop();phaseMode='work';remaining=current()?totalSeconds(current()):0;document.querySelector('.app').classList.remove('focus-mode');renderTimer()};
 $('clearAll').onclick=()=>{if(blocks.length&&confirm('Apagar todos os blocos e rounds?')){stop();document.querySelector('.app').classList.remove('focus-mode');blocks=[];active=0;remaining=0;save();render()}};
-load();render();try{loadSavedTimers();renderSavedTimers();checkSharedTimerLink()}catch(e){console.error('Erro ao carregar timers salvos:',e)}
+load();render();try{loadSavedTimers();ensureDefaultWorkout();renderSavedTimers();checkSharedTimerLink()}catch(e){console.error('Erro ao carregar timers salvos:',e)}
 </script></body></html>
