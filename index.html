@@ -52,15 +52,14 @@ function createDefaultWorkout(){
   {name:'Descanso',open:false,rounds:[{name:'Descanso',duration:30,rest:0}]},
   {name:'Round 1',open:false,rounds:[{name:'Round 1',duration:210,rest:30}]},
   {name:'Round 2',open:false,rounds:[{name:'Round 2',duration:210,rest:30}]},
-  {name:'Bloco 3',open:false,rounds:rounds('Round',4,50,10)},
+  {name:'Bloco 3',open:false,rounds:rounds('Round',4,50,5)},
   {name:'Troca',open:false,rounds:[{name:'Troca',duration:120,rest:0}]},
   {name:'MMA — 12 rounds',open:false,rounds:addActivePauses('MMA',12)},
   {name:'Troca',open:false,rounds:[{name:'Troca',duration:120,rest:0}]},
-  {name:'Treino — 4 rounds',open:false,rounds:rounds('Treino',4,50,40)},
+  {name:'Treino — 4 rounds',open:false,rounds:rounds('Treino',4,50,10)},
   {name:'Round final',open:false,rounds:[{name:'Round final',duration:210,rest:30}]},
   {name:'Troca',open:false,rounds:[{name:'Troca',duration:120,rest:0}]},
-  {name:'MMA — 8 rounds',open:false,rounds:addActivePauses('MMA',8)},
-  {name:'Ajuste final',open:false,rounds:[{name:'Ajuste final',duration:480,rest:0}]}
+  {name:'MMA — 8 rounds',open:false,rounds:(()=>{const out=[];for(let i=1;i<=8;i++){out.push({name:'MMA '+i,duration:50,rest:5});if(i===4)out.push({name:'Pausa ativa',duration:30,rest:0})}return out})()}
  ]};
 }
 function createMMA050Workout(){
