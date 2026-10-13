@@ -61,7 +61,17 @@ function createDefaultWorkout(){
   {name:'MMA — 8 rounds',open:false,rounds:rounds('MMA',8,50,10)}
  ]};
 }
-function ensureDefaultWorkout(){if(!savedTimers.some(t=>t.name==='Treino completo MMA')){savedTimers.unshift(createDefaultWorkout());persistSavedTimers()}}
+function ensureDefaultWorkout(){
+ let preset=savedTimers.find(t=>t.name==='Treino completo MMA');
+ if(!preset){savedTimers.unshift(createDefaultWorkout());persistSavedTimers();return}
+ let changed=false;
+ for(const block of (preset.blocks||[])){
+  if(block.name==='Round 1'||block.name==='Round 2'){
+   for(const round of (block.rounds||[])){if(round.name===block.name&&Number(round.rest)!==30){round.rest=30;changed=true}}
+  }
+ }
+ if(changed){preset.updatedAt=Date.now();persistSavedTimers()}
+}
 function encodeTimerData(data){return btoa(unescape(encodeURIComponent(JSON.stringify(data)))).replaceAll('+','-').replaceAll('/','_').replace(/=+$/,'')}
 function decodeTimerData(encoded){let base=encoded.replaceAll('-','+').replaceAll('_','/');while(base.length%4)base+='=';return JSON.parse(decodeURIComponent(escape(atob(base))))}
 function shareSavedLink(index){const t=savedTimers[index];if(!t)return;const payload={format:'round-timer',version:1,name:t.name,blocks:t.blocks};const url=new URL(location.href);url.hash='timer='+encodeTimerData(payload);const shareUrl=url.href;if(navigator.share){navigator.share({title:'ROUND — '+t.name,text:'Importe este treino no ROUND Fitness Timer:',url:shareUrl}).catch(err=>{if(err.name!=='AbortError')copyShareLink(shareUrl)})}else copyShareLink(shareUrl)}
