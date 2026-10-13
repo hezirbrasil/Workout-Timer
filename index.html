@@ -59,7 +59,7 @@ function createDefaultWorkout(){
   {name:'Treino — 4 rounds',open:false,rounds:rounds('Treino',4,50,10)},
   {name:'Round final',open:false,rounds:[{name:'Round final',duration:210,rest:60}]},
   {name:'Troca',open:false,rounds:[{name:'Troca',duration:110,rest:0}]},
-  {name:'Luta — 8 rounds',open:false,rounds:(()=>{const out=[];for(let i=1;i<=8;i++){out.push({name:'Luta '+i,duration:50,rest:10});if(i===5)out.push({name:'Pausa ativa',duration:30,rest:0})}return out})()}
+  {name:'MMA — 8 rounds',open:false,rounds:(()=>{const out=[];for(let i=1;i<=8;i++){out.push({name:'MMA '+i,duration:50,rest:10});if(i===4)out.push({name:'Pausa ativa',duration:30,rest:0})}return out})()}
 ,
   {name:'Fim',open:false,rounds:[{name:'Fim',duration:60,rest:0}]}
  ]};
