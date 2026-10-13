@@ -33,13 +33,14 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 </main>
 <script>
 const $=id=>document.getElementById(id);
-let blocks=[],active=0,remaining=0,running=false,interval=null,lastStamp=0;
+let blocks=[],active=0,remaining=0,running=false,interval=null,lastStamp=0,phaseMode='work';
 const fmt=s=>{s=Math.max(0,Math.ceil(s));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
 const allRounds=()=>blocks.flatMap((b,bi)=>b.rounds.map((r,ri)=>({...r,bi,ri,blockName:b.name})));
 const rounds=()=>allRounds();
 function save(){try{localStorage.setItem('round-fitness-v1',JSON.stringify(blocks))}catch(e){}}
 function load(){/* começa vazio por padrão; não cria rounds automaticamente */}
 function totalSeconds(r){return Math.max(1,Number(r?.duration)||50)}
+function phaseLength(r){return phaseMode==='rest'?Math.max(0,Number(r?.rest)||0):totalSeconds(r)}
 function current(){return rounds()[active]}
 function stop(){running=false;if(interval)clearInterval(interval);interval=null;lastStamp=0;$('play').textContent='▶ INICIAR'}
 function renderTimer(){
@@ -87,12 +88,12 @@ function moveBlock(i,d){const j=i+d;if(j<0||j>=blocks.length)return;[blocks[i],b
 function moveRound(bi,ri,d){const j=ri+d;if(j<0||j>=blocks[bi].rounds.length)return;[blocks[bi].rounds[ri],blocks[bi].rounds[j]]=[blocks[bi].rounds[j],blocks[bi].rounds[ri]];save();render()}
 function addBlock(){blocks.push({name:'Bloco '+(blocks.length+1),open:true,rounds:[]});save();render()}
 function addRound(){if(!blocks.length)addBlock();const b=blocks[blocks.length-1];b.rounds.push({name:'Round '+(b.rounds.length+1),duration:50,rest:10});b.open=true;save();render()}
-function advance(){const list=rounds();if(!list.length)return;active=(active+1)%list.length;remaining=totalSeconds(current());renderTimer()}
-function back(){const list=rounds();if(!list.length)return;active=(active-1+list.length)%list.length;remaining=totalSeconds(current());renderTimer()}
-function tick(){const now=Date.now();if(!lastStamp)lastStamp=now;const delta=(now-lastStamp)/1000;lastStamp=now;remaining-=delta;if(remaining<=0){advance();if(!running)return;remaining=totalSeconds(current())}renderTimer()}
+function advance(){const list=rounds();if(!list.length)return;active=(active+1)%list.length;phaseMode='work';remaining=totalSeconds(current());renderTimer()}
+function back(){const list=rounds();if(!list.length)return;active=(active-1+list.length)%list.length;phaseMode='work';remaining=totalSeconds(current());renderTimer()}
+function tick(){const now=Date.now();if(!lastStamp)lastStamp=now;const delta=(now-lastStamp)/1000;lastStamp=now;remaining-=delta;if(remaining<=0){const r=current();if(phaseMode==='work'&&Number(r?.rest)>0){phaseMode='rest';remaining=Number(r.rest)}else{phaseMode='work';const list=rounds();if(!list.length){stop();return}active=(active+1)%list.length;remaining=totalSeconds(current())}}renderTimer()}
 function toggle(){if(!rounds().length)return;if(running){stop();renderTimer()}else{running=true;lastStamp=Date.now();$('play').textContent='Ⅱ PAUSAR';interval=setInterval(tick,100)}}
 $('addBlock').onclick=addBlock;$('addRound').onclick=addRound;$('play').onclick=toggle;$('next').onclick=()=>{advance();};$('prev').onclick=back;
-$('reset').onclick=()=>{stop();remaining=current()?totalSeconds(current()):0;renderTimer()};
+$('reset').onclick=()=>{stop();phaseMode='work';remaining=current()?totalSeconds(current()):0;renderTimer()};
 $('clearAll').onclick=()=>{if(blocks.length&&confirm('Apagar todos os blocos e rounds?')){stop();blocks=[];active=0;remaining=0;save();render()}};
 load();render();
 </script></body></html>
