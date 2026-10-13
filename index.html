@@ -49,8 +49,8 @@ function createDefaultWorkout(){
  return {name:'Treino completo MMA',updatedAt:Date.now(),blocks:[
   {name:'Aquecimento',open:false,rounds:[{name:'Aquecimento',duration:180,rest:0}]},
   {name:'Descanso',open:false,rounds:[{name:'Descanso',duration:30,rest:0}]},
-  {name:'Round 1',open:false,rounds:[{name:'Round 1',duration:210,rest:0}]},
-  {name:'Round 2',open:false,rounds:[{name:'Round 2',duration:210,rest:0}]},
+  {name:'Round 1',open:false,rounds:[{name:'Round 1',duration:210,rest:30}]},
+  {name:'Round 2',open:false,rounds:[{name:'Round 2',duration:210,rest:30}]},
   {name:'Bloco 3',open:false,rounds:rounds('Round',4,50,10)},
   {name:'Troca',open:false,rounds:[{name:'Troca',duration:120,rest:0}]},
   {name:'MMA — 12 rounds',open:false,rounds:rounds('MMA',12,50,10)},
