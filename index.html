@@ -59,7 +59,7 @@ function render(){
  el.querySelector('.block-title strong').textContent=b.name;el.querySelector('.block-title small').textContent=b.rounds.length+' round(s) · '+fmt(duration);
  el.querySelector('.bname').value=b.name;el.querySelector('.total').textContent='Tempo do bloco: '+fmt(duration);
  el.querySelector('.bname').oninput=e=>{b.name=e.target.value||'Bloco sem nome';el.querySelector('.block-title strong').textContent=b.name;save();renderTimer()};
- el.querySelector('.toggle').onclick=()=>{b.open=!b.open;render()};
+ const toggleBlock=()=>{b.open=!b.open;render()};el.querySelector('.block-top').onclick=e=>{if(e.target.closest('button'))return;toggleBlock()};el.querySelector('.block-top').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggleBlock()}};el.querySelector('.toggle').onclick=toggleBlock;
  el.querySelector('.up').onclick=()=>moveBlock(bi,-1);el.querySelector('.down').onclick=()=>moveBlock(bi,1);
  el.querySelector('.del').onclick=()=>{if(confirm('Excluir o bloco "'+b.name+'" e seus rounds?')){blocks.splice(bi,1);reindex();save();render()}};
  el.querySelector('.addInside').onclick=()=>{b.rounds.push({name:'Round '+(b.rounds.length+1),duration:50,rest:10});b.open=true;save();render()};
