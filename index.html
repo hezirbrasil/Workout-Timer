@@ -48,7 +48,6 @@ function createDefaultWorkout(){
  const rounds=(prefix,count,duration=50,rest=10)=>Array.from({length:count},(_,i)=>({name:prefix+' '+(i+1),duration,rest}));
  const addActivePauses=(prefix,count)=>{const out=[];for(let i=1;i<=count;i++){out.push({name:prefix+' '+i,duration:50,rest:10});if(i%4===0&&i<count)out.push({name:'Pausa ativa',duration:30,rest:0})}return out};
  return {name:'MMA 3:30',updatedAt:Date.now(),blocks:[
-  {name:'Aquecimento',open:false,rounds:[{name:'Aquecimento',duration:180,rest:0}]},
   {name:'Descanso',open:false,rounds:[{name:'Descanso',duration:30,rest:0}]},
   {name:'Round 1',open:false,rounds:[{name:'Round 1',duration:210,rest:30}]},
   {name:'Round 2',open:false,rounds:[{name:'Round 2',duration:210,rest:30}]},
@@ -71,7 +70,6 @@ function createMMA050Workout(){
  const exchange=()=>({name:'Troca',open:false,rounds:[{name:'Troca',duration:90,rest:0}]});
  const fightBlock=(name,count)=>{const out=[];for(let i=1;i<=count;i++){out.push({name:'MMA '+i,duration:50,rest:10});if(i%4===0&&i<count)out.push({name:'Pausa ativa',duration:30,rest:0})}return {name,open:false,rounds:out}};
  return {name:'MMA 0:50',updatedAt:Date.now(),blocks:[
-  {name:'Aquecimento',open:false,rounds:[{name:'Aquecimento',duration:180,rest:0}]},
   rest30(),
   fightBlock('Luta — 12 rounds',12),
   exchange(),
