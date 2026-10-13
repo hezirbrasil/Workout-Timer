@@ -104,5 +104,5 @@ function toggle(){if(!rounds().length)return;if(running){stop();renderTimer()}el
 $('addBlock').onclick=addBlock;$('addRound').onclick=addRound;$('saveTimer').onclick=saveCurrentTimer;$('play').onclick=toggle;$('next').onclick=()=>{advance();};$('prev').onclick=back;
 $('reset').onclick=()=>{stop();phaseMode='work';remaining=current()?totalSeconds(current()):0;document.querySelector('.app').classList.remove('focus-mode');renderTimer()};
 $('clearAll').onclick=()=>{if(blocks.length&&confirm('Apagar todos os blocos e rounds?')){stop();document.querySelector('.app').classList.remove('focus-mode');blocks=[];active=0;remaining=0;save();render()}};
-load();render();loadSavedTimers();renderSavedTimers();
+load();render();try{loadSavedTimers();renderSavedTimers()}catch(e){console.error('Erro ao carregar timers salvos:',e)}
 </script></body></html>
