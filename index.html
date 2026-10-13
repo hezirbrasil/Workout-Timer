@@ -79,7 +79,8 @@ function createMMA050Workout(){
   block('Bloco 6',30),
   exchange(),
   block('Bloco 7',30),
-  block('Bloco 8',10)
+  block('Bloco 8',10),
+  {name:'Descanso final',open:false,rounds:[{name:'Descanso final',duration:70,rest:0}]}
  ]};
 }
 function ensureDefaultWorkout(){
