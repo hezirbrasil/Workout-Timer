@@ -63,23 +63,23 @@ function createDefaultWorkout(){
  ]};
 }
 function createMMA050Workout(){
- const rounds=(prefix,count)=>Array.from({length:count},(_,i)=>({name:prefix+' '+(i+1),duration:50,rest:10}));
- const block=(name)=>({name,open:false,rounds:rounds('Round',4)});
+ const rounds=(prefix,count,rest=40)=>Array.from({length:count},(_,i)=>({name:prefix+' '+(i+1),duration:50,rest}));
+ const block=(name,rest=40)=>({name,open:false,rounds:rounds('Round',4,rest)});
  const rest30=()=>({name:'Descanso',open:false,rounds:[{name:'Descanso',duration:30,rest:0}]});
  const exchange=()=>({name:'Troca',open:false,rounds:[{name:'Troca',duration:120,rest:0}]});
  return {name:'MMA 0:50',updatedAt:Date.now(),blocks:[
   {name:'Aquecimento',open:false,rounds:[{name:'Aquecimento',duration:180,rest:0}]},
   rest30(),
-  block('Bloco 1'),rest30(),
-  block('Bloco 2'),rest30(),
-  block('Bloco 3'),rest30(),
+  block('Bloco 1',40),
+  block('Bloco 2',40),
+  block('Bloco 3',40),
   exchange(),
-  block('Bloco 4'),rest30(),
-  block('Bloco 5'),rest30(),
-  block('Bloco 6'),rest30(),
+  block('Bloco 4',40),
+  block('Bloco 5',40),
+  block('Bloco 6',40),
   exchange(),
-  block('Bloco 7'),rest30(),
-  block('Bloco 8')
+  block('Bloco 7',40),
+  block('Bloco 8',10)
  ]};
 }
 function ensureDefaultWorkout(){
@@ -105,7 +105,12 @@ function ensureDefaultWorkout(){
   const desiredNames=template.map(b=>b.name);
   if(JSON.stringify(blocks.map(b=>b.name))!==JSON.stringify(desiredNames)){preset.blocks=template;changed=true}
  }
- if(!savedTimers.some(t=>t.name==='MMA 0:50')){savedTimers.push(createMMA050Workout());changed=true}
+ const mma050=savedTimers.find(t=>t.name==='MMA 0:50');
+ if(!mma050){savedTimers.push(createMMA050Workout());changed=true}
+ else {
+  const fresh050=createMMA050Workout();
+  if(JSON.stringify(mma050.blocks)!==JSON.stringify(fresh050.blocks)){mma050.blocks=fresh050.blocks;mma050.updatedAt=Date.now();changed=true}
+ }
  if(changed){preset.updatedAt=Date.now();persistSavedTimers()}
 }
 function encodeTimerData(data){return btoa(unescape(encodeURIComponent(JSON.stringify(data)))).replaceAll('+','-').replaceAll('/','_').replace(/=+$/,'')}
