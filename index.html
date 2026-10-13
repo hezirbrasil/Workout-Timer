@@ -88,38 +88,9 @@ function createMMA050Workout(){
  ]};
 }
 function ensureDefaultWorkout(){
- let changed=false;
- let preset=savedTimers.find(t=>t.name==='Treino completo MMA'||t.name==='MMA 3:30');
- if(!preset){preset=createDefaultWorkout();savedTimers.unshift(preset);changed=true}
- else {
-  if(preset.name!=='MMA 3:30'){preset.name='MMA 3:30';changed=true}
-  const fresh=createDefaultWorkout();
-  const getBlock=(name)=>preset.blocks.find(b=>b.name===name);
-  const freshBlock=(name)=>fresh.blocks.find(b=>b.name===name);
-  for(const name of ['Aquecimento','Descanso','Round 1','Round 2','Bloco 3','MMA — 12 rounds','Treino — 4 rounds','Round final','MMA — 8 rounds']){
-   const old=getBlock(name),next=freshBlock(name);
-   if(old&&next){
-    const before=JSON.stringify(old.rounds);
-    if(name==='MMA — 12 rounds'||name==='MMA — 8 rounds'||name==='Treino — 4 rounds'||name==='Round 1'||name==='Round 2'||name==='Round final'||name==='Aquecimento'||name==='Descanso'||name==='Bloco 3')old.rounds=next.rounds;
-    if(before!==JSON.stringify(old.rounds))changed=true;
-   }
-  }
-  const blocks=preset.blocks;
-  // Ensure pause/exchange blocks and their order match the current standard template.
-  const template=fresh.blocks;
-  const desiredNames=template.map(b=>b.name);
-  if(JSON.stringify(blocks.map(b=>b.name))!==JSON.stringify(desiredNames)){preset.blocks=template;changed=true}
- }
- const freshDefault=createDefaultWorkout();
- const existingDefault=savedTimers.find(t=>t.name==='MMA 3:30');
- if(existingDefault && JSON.stringify(existingDefault.blocks)!==JSON.stringify(freshDefault.blocks)){existingDefault.blocks=JSON.parse(JSON.stringify(freshDefault.blocks));existingDefault.updatedAt=Date.now();changed=true}
- const mma050=savedTimers.find(t=>t.name==='MMA 0:50');
- if(!mma050){savedTimers.push(createMMA050Workout());changed=true}
- else {
-  const fresh050=createMMA050Workout();
-  if(JSON.stringify(mma050.blocks)!==JSON.stringify(fresh050.blocks)){mma050.blocks=JSON.parse(JSON.stringify(fresh050.blocks));mma050.updatedAt=Date.now();changed=true}
- }
- if(changed){persistSavedTimers()}
+ const before=savedTimers.length;
+ savedTimers=savedTimers.filter(t=>!['MMA 3:30','MMA 0:50','Treino completo MMA'].includes(t.name));
+ if(savedTimers.length!==before)persistSavedTimers();
 }
 function encodeTimerData(data){return btoa(unescape(encodeURIComponent(JSON.stringify(data)))).replaceAll('+','-').replaceAll('/','_').replace(/=+$/,'')}
 function decodeTimerData(encoded){let base=encoded.replaceAll('-','+').replaceAll('_','/');while(base.length%4)base+='=';return JSON.parse(decodeURIComponent(escape(atob(base))))}
