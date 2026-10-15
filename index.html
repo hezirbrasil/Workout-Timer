@@ -38,7 +38,7 @@ let blocks=[],active=0,remaining=0,running=false,interval=null,lastStamp=0,phase
 let savedTimers=[];
 let lastBeepSecond=null,audioContext=null;
 function prepareAudio(){try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return null;if(!audioContext||audioContext.state==='closed')audioContext=new AC();if(audioContext.state==='suspended')audioContext.resume().catch(()=>{});return audioContext}catch(e){return null}}
-function beep(){try{const ctx=prepareAudio();if(!ctx||ctx.state!=='running')return;const osc=ctx.createOscillator();const gain=ctx.createGain();osc.type='sine';osc.frequency.value=880;gain.gain.setValueAtTime(0.0001,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(0.12,ctx.currentTime+0.01);gain.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.16);osc.connect(gain);gain.connect(ctx.destination);osc.start(ctx.currentTime);osc.stop(ctx.currentTime+0.17)}catch(e){}}
+function beep(){try{const ctx=prepareAudio();if(!ctx)return;const play=()=>{try{if(ctx.state!=='running')return;const osc=ctx.createOscillator();const gain=ctx.createGain();osc.type='sine';osc.frequency.value=1040;gain.gain.setValueAtTime(0.0001,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(0.2,ctx.currentTime+0.01);gain.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.2);osc.connect(gain);gain.connect(ctx.destination);osc.start(ctx.currentTime);osc.stop(ctx.currentTime+0.21)}catch(e){}};if(ctx.state==='running')play();else ctx.resume().then(play).catch(()=>{})}catch(e){}}
 const fmt=s=>{s=Math.max(0,Math.ceil(s));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
 const allRounds=()=>blocks.flatMap((b,bi)=>b.rounds.map((r,ri)=>({...r,bi,ri,blockName:b.name})));
 const rounds=()=>allRounds();
