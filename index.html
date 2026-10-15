@@ -146,7 +146,7 @@ function render(){
  card.querySelector('.rname').oninput=e=>{r.name=e.target.value||'Round';if(b.standalone){b.name=r.name;const blockName=el.querySelector('.bname');if(blockName)blockName.value=r.name}update()};card.querySelector('.rname').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();e.stopPropagation();e.currentTarget.blur();const content=card.querySelector('.round-content');const toggle=card.querySelector('.collapse-round');if(content)content.style.display='none';if(toggle){toggle.textContent='＋';toggle.title='Expandir round'}save()}};
  card.querySelector('.dur').onchange=e=>{r.duration=Math.max(1,Math.min(3600,Number(e.target.value)||1));if(activeRoundIs(bi,ri)&&phaseMode==='work')remaining=r.duration;update()};
  card.querySelector('.rest').onchange=e=>{r.rest=Math.max(0,Math.min(3600,Number(e.target.value)||0));if(activeRoundIs(bi,ri)&&phaseMode==='rest')remaining=r.rest;update()};
- bindDrag(card.querySelector('.drag-handle'),card,'round',bi,ri);card.querySelector('.ru').onclick=()=>b.standalone?moveBlock(bi,-1):moveRound(bi,ri,-1);card.querySelector('.rd').onclick=()=>b.standalone?moveBlock(bi,1):moveRound(bi,ri,1);card.querySelector('.to-start').onclick=()=>moveRoundToEdge(bi,ri,'start');card.querySelector('.to-end').onclick=()=>moveRoundToEdge(bi,ri,'end');
+ bindDrag(card.querySelector('.drag-handle'),card,'round',bi,ri);card.querySelector('.ru').onclick=()=>b.standalone?moveBlock(bi,-1):moveRound(bi,ri,-1);card.querySelector('.rd').onclick=()=>b.standalone?moveBlock(bi,1):moveRound(bi,ri,1);card.querySelector('.to-start').onclick=()=>b.standalone?moveBlockToEdge(bi,'start'):moveRoundToEdge(bi,ri,'start');card.querySelector('.to-end').onclick=()=>b.standalone?moveBlockToEdge(bi,'end'):moveRoundToEdge(bi,ri,'end');
  card.querySelector('.dup').onclick=()=>{b.rounds.splice(ri+1,0,{...r,name:r.name+' (cópia)'});save();render()};
  card.querySelector('.delr').onclick=()=>{b.rounds.splice(ri,1);if(!b.rounds.length){blocks.splice(bi,1)}reindex();save();render()};
  rh.appendChild(card);
@@ -161,6 +161,7 @@ function reindex(){active=Math.min(active,Math.max(0,rounds().length-1));phaseMo
 function moveBlock(i,d){const j=i+d;if(j<0||j>=blocks.length)return;[blocks[i],blocks[j]]=[blocks[j],blocks[i]];save();render()}
 function moveRound(bi,ri,d){const j=ri+d;if(j<0||j>=blocks[bi].rounds.length)return;[blocks[bi].rounds[ri],blocks[bi].rounds[j]]=[blocks[bi].rounds[j],blocks[bi].rounds[ri]];save();render()}
 function moveRoundToEdge(bi,ri,edge){if(!blocks[bi]||ri<0||ri>=blocks[bi].rounds.length)return;const item=blocks[bi].rounds.splice(ri,1)[0];if(edge==='start')blocks[bi].rounds.unshift(item);else blocks[bi].rounds.push(item);save();render()}
+function moveBlockToEdge(bi,edge){if(bi<0||bi>=blocks.length)return;const item=blocks.splice(bi,1)[0];if(edge==='start')blocks.unshift(item);else blocks.push(item);save();render()}
 function addBlock(){blocks.push({name:'Bloco '+(blocks.length+1),open:true,rounds:[]});save();render()}
 function addRound(){const count=rounds().length+1;blocks.push({name:'Round avulso '+count,open:true,standalone:true,rounds:[{name:'Round '+count,duration:50,rest:10}]});save();render()}
 function advance(){const list=rounds();if(!list.length)return;active=(active+1)%list.length;phaseMode='work';remaining=totalSeconds(current());renderTimer()}
