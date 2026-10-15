@@ -181,8 +181,8 @@ async function exportWorkoutVideo(){
  });
  if(!sequence.length){alert('Adicione rounds antes de exportar.');return}
  const total=sequence.reduce((s,p)=>s+p.duration,0);
- if(!window.VideoEncoder||!window.AudioEncoder||!window.VideoFrame||!window.AudioData){
-  alert('A exportação rápida não é compatível com este navegador. Atualize o navegador ou use um computador.');return
+ if(!window.VideoEncoder||!window.VideoFrame){
+  alert('Este navegador não permite exportação acelerada de vídeo. No iPhone, atualize o iOS e abra o ROUND no Safari. Se continuar, será necessário exportar por um computador.');return
  }
  if(!confirm('Gerar vídeo Full HD acelerado com o treino inteiro ('+fmt(total)+')? A exportação será feita sem esperar o tempo real do treino. Mantenha esta página aberta.'))return;
  const button=$('exportVideo'),hint=$('exportHint'),originalHint=hint.textContent;
@@ -194,15 +194,17 @@ async function exportWorkoutVideo(){
   canvas=document.createElement('canvas');canvas.width=1920;canvas.height=1080;
   const ctx=canvas.getContext('2d',{alpha:false});
   const target=new Mp4Muxer.ArrayBufferTarget();
-  muxer=new Mp4Muxer.Muxer({target,video:{codec:'avc',width:1920,height:1080,frameRate:1},audio:{codec:'aac',sampleRate:48000,numberOfChannels:1},fastStart:'in-memory'});
-  const videoConfig={codec:'avc1.42001f',width:1920,height:1080,bitrate:5000000,framerate:1,latencyMode:'quality'};
-  const audioConfig={codec:'mp4a.40.2',sampleRate:48000,numberOfChannels:1,bitrate:96000};
-  const [vSupport,aSupport]=await Promise.all([VideoEncoder.isConfigSupported(videoConfig),AudioEncoder.isConfigSupported(audioConfig)]);
-  if(!vSupport.supported||!aSupport.supported)throw new Error('Este navegador não oferece codificação acelerada de vídeo e áudio MP4.');
+  const videoConfig={codec:'avc1.42001f',width:1920,height:1080,bitrate:3500000,framerate:1,latencyMode:'quality'};
+  const audioConfig={codec:'mp4a.40.2',sampleRate:48000,numberOfChannels:1,bitrate:64000};
+  const vSupport=await VideoEncoder.isConfigSupported(videoConfig);
+  if(!vSupport.supported)throw new Error('Este navegador não suporta codificação MP4 acelerada.');
+  let hasAudio=false;
+  if(window.AudioEncoder&&window.AudioData){try{const aSupport=await AudioEncoder.isConfigSupported(audioConfig);hasAudio=!!aSupport.supported}catch(e){hasAudio=false}}
+  muxer=new Mp4Muxer.Muxer({target,video:{codec:'avc',width:1920,height:1080,frameRate:1},...(hasAudio?{audio:{codec:'aac',sampleRate:48000,numberOfChannels:1}}:{}),fastStart:'in-memory'});
   const encoderErrors=[];
   videoEncoder=new VideoEncoder({output:(chunk,meta)=>muxer.addVideoChunk(chunk,meta),error:e=>encoderErrors.push(e)});
-  audioEncoder=new AudioEncoder({output:(chunk,meta)=>muxer.addAudioChunk(chunk,meta),error:e=>encoderErrors.push(e)});
-  videoEncoder.configure(videoConfig);audioEncoder.configure(audioConfig);
+  videoEncoder.configure(videoConfig);
+  if(hasAudio){audioEncoder=new AudioEncoder({output:(chunk,meta)=>muxer.addAudioChunk(chunk,meta),error:e=>encoderErrors.push(e)});audioEncoder.configure(audioConfig)}
   const draw=(p,sec,index,elapsed)=>{
    const W=1920,H=1080;ctx.fillStyle='#050507';ctx.fillRect(0,0,W,H);
    const grad=ctx.createRadialGradient(W/2,H/2,50,W/2,H/2,900);grad.addColorStop(0,'#160d25');grad.addColorStop(1,'#050507');ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
@@ -225,31 +227,34 @@ async function exportWorkoutVideo(){
    if(t%Math.max(1,Math.ceil(total/100))===0){setProgress((t/total)*70,t);await new Promise(r=>setTimeout(r,0))}
   }
   await videoEncoder.flush();setProgress(75,total);
-  const chunkSeconds=0.1,framesPerChunk=4800,totalChunks=Math.ceil(total/chunkSeconds);
-  for(let ci=0;ci<totalChunks;ci++){
-   if(encoderErrors.length)throw encoderErrors[0];
-   const sampleStart=ci*framesPerChunk,count=Math.min(framesPerChunk,total*48000-sampleStart);
-   if(count<=0)break;
-   const pcm=new Float32Array(count),chunkStart=sampleStart/48000;
-   for(let j=0;j<count;j++){
-    const time=chunkStart+j/48000,state=phaseAt(Math.min(total-0.000001,time));
-    const elapsed=time-state.phaseStart,rem=state.p.duration-elapsed,sec=Math.ceil(rem);
-    if(sec>=1&&sec<=3&&rem>(sec-1)&&elapsed%1<0.20){
-     const local=elapsed%1;const envelope=Math.min(1,local/0.01)*Math.max(0,Math.min(1,(0.20-local)/0.04));
-     pcm[j]=0.22*envelope*Math.sin(2*Math.PI*1040*local);
+  if(hasAudio){
+   const framesPerChunk=48000,totalChunks=Math.ceil(total);
+   const beepStarts=[];
+   sequence.forEach((p,i)=>{for(let n=3;n>=1;n--){const at=starts[i]+p.duration-n;if(at>=starts[i]&&at<starts[i]+p.duration)beepStarts.push(at)}});
+   for(let ci=0;ci<totalChunks;ci++){
+    if(encoderErrors.length)throw encoderErrors[0];
+    const sampleStart=ci*framesPerChunk,count=Math.min(framesPerChunk,(total*48000)-sampleStart);
+    if(count<=0)break;
+    const pcm=new Float32Array(count),chunkStart=sampleStart/48000,chunkEnd=chunkStart+count/48000;
+    for(const at of beepStarts){
+     const toneStart=at+0.02,toneEnd=at+0.20;
+     if(toneEnd<=chunkStart||toneStart>=chunkEnd)continue;
+     const from=Math.max(0,Math.floor((toneStart-chunkStart)*48000)),to=Math.min(count,Math.ceil((toneEnd-chunkStart)*48000));
+     for(let j=from;j<to;j++){const local=chunkStart+j/48000-at-0.02;const env=Math.min(1,local/0.01)*Math.max(0,Math.min(1,(0.18-local)/0.04));pcm[j]=0.22*env*Math.sin(2*Math.PI*1040*local)}
     }
+    const audioData=new AudioData({format:'f32',sampleRate:48000,numberOfFrames:count,numberOfChannels:1,timestamp:Math.round(sampleStart/48000*1000000),data:pcm});
+    audioEncoder.encode(audioData);audioData.close();
+    if(ci%Math.max(1,Math.ceil(totalChunks/20))===0){setProgress(75+(ci/totalChunks)*20,total);await new Promise(r=>setTimeout(r,0))}
    }
-   const audioData=new AudioData({format:'f32',sampleRate:48000,numberOfFrames:count,numberOfChannels:1,timestamp:Math.round(sampleStart/48000*1000000),data:pcm});
-   audioEncoder.encode(audioData);audioData.close();
-   if(ci%Math.max(1,Math.ceil(totalChunks/25))===0){setProgress(75+(ci/totalChunks)*20,total);await new Promise(r=>setTimeout(r,0))}
-  }
-  await audioEncoder.flush();setProgress(97,total);
+   await audioEncoder.flush();
+  }else{hint.textContent='Gerando MP4 sem áudio: este navegador não oferece codificação de som compatível.'}
+  setProgress(97,total);
   if(encoderErrors.length)throw encoderErrors[0];
   muxer.finalize();
   const blob=new Blob([target.buffer],{type:'video/mp4'});
   const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='ROUND-treino-completo.mp4';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
   setProgress(100,total);hint.textContent='Vídeo MP4 pronto e download iniciado.';
-  alert('Vídeo MP4 gerado! A exportação rápida terminou sem esperar o tempo real do treino.');
+  alert(hasAudio?'Vídeo MP4 gerado! A exportação rápida terminou sem esperar o tempo real do treino.':'Vídeo MP4 sem áudio gerado rapidamente. Este navegador não oferece codificação de som compatível.');
  }catch(e){
   console.error('Exportação rápida falhou:',e);
   alert('A exportação rápida não funcionou neste navegador. Atualize o Safari ou tente em um computador. Detalhe: '+(e?.message||'erro desconhecido'));
