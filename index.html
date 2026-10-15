@@ -29,7 +29,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 <div class="section-head"><h2>SEU TREINO</h2><span class="muted" id="summary">0 blocos · 0 rounds</span></div>
 <div id="blocks" class="blocks"></div>
 <div class="bottom-actions"><button class="btn main" id="addBlock">＋ Adicionar bloco</button><button class="btn" id="addRound">＋ Adicionar round</button><button class="btn ghost" id="clearAll">Limpar treino</button></div>
-<div class="bottom-actions"><button class="btn" id="exportVideo" style="width:100%">⚡ Exportar vídeo rápido (MP4)</button></div><p class="hint" id="exportHint" style="margin-top:8px">Exportação rápida: gera o treino completo em MP4 horizontal 1080p sem esperar o tempo real.</p>
+<div class="bottom-actions"><button class="btn" id="exportVideo" style="width:100%">⚡ Exportar vídeo rápido (MP4)</button></div><p class="hint" id="exportHint" style="margin-top:8px">Exportação rápida: gera o treino completo em MP4 horizontal 720p, otimizado para celulares.</p>
 <section class="saved-section"><div class="section-head"><h2>TREINOS PRÉ-DEFINIDOS</h2><span class="muted">2 treinos</span></div><div id="predefinedTimers" class="saved-list"></div></section><section class="saved-section"><div class="section-head"><h2>TIMERS SALVOS</h2><span class="muted" id="savedCount">0 salvos</span></div><div id="savedTimers" class="saved-list"></div><button class="btn" id="saveTimer" style="width:100%;margin-top:10px">＋ Salvar timer montado</button><input id="importTimerFile" type="file" accept=".json,.roundtimer.json,application/json" hidden><button class="btn ghost" id="importTimerBtn" style="width:100%;margin-top:8px">＋ Importar timer de arquivo</button></section>
 <p class="hint">Edite nomes, tempos e ordem. Seus timers salvos ficam neste dispositivo.</p>
 </main>
@@ -184,23 +184,23 @@ async function exportWorkoutVideo(){
  if(!window.VideoEncoder||!window.VideoFrame){
   alert('Este navegador não permite exportação acelerada de vídeo. No iPhone, atualize o iOS e abra o ROUND no Safari. Se continuar, será necessário exportar por um computador.');return
  }
- if(!confirm('Gerar vídeo Full HD acelerado com o treino inteiro ('+fmt(total)+')? A exportação será feita sem esperar o tempo real do treino. Mantenha esta página aberta.'))return;
+ if(!confirm('Gerar vídeo 720p acelerado com o treino inteiro ('+fmt(total)+')? A exportação será feita sem esperar o tempo real do treino. Mantenha esta página aberta.'))return;
  const button=$('exportVideo'),hint=$('exportHint'),originalHint=hint.textContent;
  button.disabled=true;
  const setProgress=(pct,elapsed)=>{const n=Math.max(0,Math.min(100,Math.floor(pct)));button.textContent='Exportando vídeo… '+n+'%';hint.textContent='Exportação rápida: '+n+'% · '+fmt(elapsed)+' de '+fmt(total)+'. Mantenha esta página aberta.'};
  let videoEncoder=null,audioEncoder=null,muxer=null,canvas=null;
  try{
   const Mp4Muxer=await import('https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.2/build/mp4-muxer.mjs');
-  canvas=document.createElement('canvas');canvas.width=1920;canvas.height=1080;
-  const ctx=canvas.getContext('2d',{alpha:false});
+  canvas=document.createElement('canvas');canvas.width=1280;canvas.height=720;
+  const ctx=canvas.getContext('2d',{alpha:false});ctx.scale(2/3,2/3);
   const target=new Mp4Muxer.ArrayBufferTarget();
-  const videoConfig={codec:'avc1.42001f',width:1920,height:1080,bitrate:3500000,framerate:1,latencyMode:'quality'};
+  const videoConfig={codec:'avc1.42001e',width:1280,height:720,bitrate:1800000,framerate:1};
   const audioConfig={codec:'mp4a.40.2',sampleRate:48000,numberOfChannels:1,bitrate:64000};
   const vSupport=await VideoEncoder.isConfigSupported(videoConfig);
   if(!vSupport.supported)throw new Error('Este navegador não suporta codificação MP4 acelerada.');
   let hasAudio=false;
   if(window.AudioEncoder&&window.AudioData){try{const aSupport=await AudioEncoder.isConfigSupported(audioConfig);hasAudio=!!aSupport.supported}catch(e){hasAudio=false}}
-  muxer=new Mp4Muxer.Muxer({target,video:{codec:'avc',width:1920,height:1080,frameRate:1},...(hasAudio?{audio:{codec:'aac',sampleRate:48000,numberOfChannels:1}}:{}),fastStart:'in-memory'});
+  muxer=new Mp4Muxer.Muxer({target,video:{codec:'avc',width:1280,height:720,frameRate:1},...(hasAudio?{audio:{codec:'aac',sampleRate:48000,numberOfChannels:1}}:{}),fastStart:'in-memory'});
   const encoderErrors=[];
   videoEncoder=new VideoEncoder({output:(chunk,meta)=>muxer.addVideoChunk(chunk,meta),error:e=>encoderErrors.push(e)});
   videoEncoder.configure(videoConfig);
