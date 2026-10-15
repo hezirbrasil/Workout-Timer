@@ -174,85 +174,90 @@ async function exportWorkoutVideo(){
  if(running){alert('Pause o timer antes de exportar o vídeo.');return}
  const sequence=[];
  rounds().forEach((r,i)=>{
-  const work=Math.max(1,Number(r.duration)||50);
+  const work=Math.max(1,Math.floor(Number(r.duration)||50));
   sequence.push({name:r.name||('Round '+(i+1)),phase:'TRABALHO',duration:work});
-  const rest=Math.max(0,Number(r.rest)||0);
+  const rest=Math.max(0,Math.floor(Number(r.rest)||0));
   if(rest>0)sequence.push({name:r.name||('Round '+(i+1)),phase:'DESCANSO',duration:rest});
  });
  if(!sequence.length){alert('Adicione rounds antes de exportar.');return}
- if(!window.MediaRecorder||!HTMLCanvasElement.prototype.captureStream){alert('Este navegador não oferece gravação de vídeo compatível. Abra o ROUND em um navegador atualizado, de preferência no computador.');return}
  const total=sequence.reduce((s,p)=>s+p.duration,0);
- if(!confirm('Gerar vídeo horizontal 1920 × 1080 com o treino inteiro ('+fmt(total)+')? A gravação será feita em tempo real e pode demorar o mesmo tempo do treino. Mantenha esta página aberta.'))return;
- const canvas=document.createElement('canvas');canvas.width=1920;canvas.height=1080;
- const ctx=canvas.getContext('2d');
- const stream=canvas.captureStream(30);
- let audioCtx=null, audioDest=null;
+ if(!window.VideoEncoder||!window.AudioEncoder||!window.VideoFrame||!window.AudioData){
+  alert('A exportação rápida não é compatível com este navegador. Atualize o navegador ou use um computador.');return
+ }
+ if(!confirm('Gerar vídeo Full HD acelerado com o treino inteiro ('+fmt(total)+')? A exportação será feita sem esperar o tempo real do treino. Mantenha esta página aberta.'))return;
+ const button=$('exportVideo'),hint=$('exportHint'),originalHint=hint.textContent;
+ button.disabled=true;
+ const setProgress=(pct,elapsed)=>{const n=Math.max(0,Math.min(100,Math.floor(pct)));button.textContent='Exportando vídeo… '+n+'%';hint.textContent='Exportação rápida: '+n+'% · '+fmt(elapsed)+' de '+fmt(total)+'. Mantenha esta página aberta.'};
+ let videoEncoder=null,audioEncoder=null,muxer=null,canvas=null;
  try{
-  const AC=window.AudioContext||window.webkitAudioContext;
-  if(AC){audioCtx=new AC();audioDest=audioCtx.createMediaStreamDestination();if(audioCtx.state==='suspended')await audioCtx.resume();audioDest.stream.getAudioTracks().forEach(t=>stream.addTrack(t))}
- }catch(e){}
- const mimeTypes=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm'];
- const mime=mimeTypes.find(t=>MediaRecorder.isTypeSupported(t));
- if(!mime){stream.getTracks().forEach(t=>t.stop());if(audioCtx)audioCtx.close();alert('Este navegador não oferece codificação de vídeo compatível. Tente no Safari atualizado ou em um computador.');return}
- const isMP4=mime.includes('mp4');
- const recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:8000000,audioBitsPerSecond:128000});
- const chunks=[];
- recorder.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
- const draw=(p,sec,index)=>{
-  const W=canvas.width,H=canvas.height;
-  ctx.fillStyle='#050507';ctx.fillRect(0,0,W,H);
-  const grad=ctx.createRadialGradient(W/2,H/2,50,W/2,H/2,900);grad.addColorStop(0,'#160d25');grad.addColorStop(1,'#050507');ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
-  ctx.strokeStyle='#38204f';ctx.lineWidth=4;ctx.beginPath();ctx.roundRect(90,70,W-180,H-140,42);ctx.stroke();
-  ctx.fillStyle='#a78bfa';ctx.font='800 38px system-ui';ctx.textAlign='center';ctx.fillText('ROUND',W/2,150);
-  ctx.fillStyle=p.phase==='DESCANSO'?'#c4b5fd':'#a78bfa';ctx.font='800 30px system-ui';ctx.fillText(p.phase,W/2,245);
-  const mins=String(Math.floor(sec/60)).padStart(2,'0'),secs=String(Math.max(0,Math.ceil(sec))%60).padStart(2,'0');
-  ctx.fillStyle='#f5f3ff';ctx.font='800 250px system-ui';ctx.fillText(mins+':'+secs,W/2,565);
-  ctx.fillStyle='#f5f3ff';ctx.font='700 52px system-ui';ctx.fillText(p.name,W/2,680);
-  ctx.fillStyle='#aaa0c0';ctx.font='32px system-ui';ctx.fillText('ETAPA '+(index+1)+' / '+sequence.length,W/2,755);
-  const barW=1250,barX=(W-barW)/2,barY=820;ctx.fillStyle='#21142f';ctx.fillRect(barX,barY,barW,12);ctx.fillStyle='#8b5cf6';ctx.fillRect(barX,barY,barW*(index/sequence.length+(1-sec/p.duration)/sequence.length),12);
- };
- const playBeep=()=>{if(!audioCtx||!audioDest)return;try{const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();osc.frequency.value=1040;gain.gain.setValueAtTime(.0001,audioCtx.currentTime);gain.gain.exponentialRampToValueAtTime(.15,audioCtx.currentTime+.02);gain.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+.2);osc.connect(gain);gain.connect(audioDest);osc.start();osc.stop(audioCtx.currentTime+.21)}catch(e){}};
- const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
- const button=$('exportVideo');button.disabled=true;button.textContent='Gravando vídeo… mantenha a página aberta';
- let cancelled=false;
- let completedSeconds=0;
- const exportStartedAt=performance.now();
- const hint=$('exportHint');
- const originalHint=hint.textContent;
- const setExportProgress=(percent,elapsedSeconds)=>{
-  const pct=Math.max(0,Math.min(100,Math.floor(percent)));
-  button.textContent='Exportando vídeo… '+pct+'%';
-  hint.textContent='Gerando vídeo: '+pct+'% · '+fmt(elapsedSeconds)+' de '+fmt(total)+'. Mantenha esta página aberta.';
- };
- try{
-  recorder.start(1000);
-  setExportProgress(0,0);
-  for(let i=0;i<sequence.length;i++){
-   const p=sequence[i],start=performance.now();let lastBeep=0;
-   while(true){
-    const elapsed=(performance.now()-start)/1000,remaining=Math.max(0,p.duration-elapsed);
-    draw(p,remaining,i);
-    const overallElapsed=Math.min(total,completedSeconds+elapsed);
-    setExportProgress((overallElapsed/total)*100,overallElapsed);
-    const s=Math.ceil(remaining);
-    if(s>=1&&s<=3&&s!==lastBeep){playBeep();lastBeep=s}
-    if(elapsed>=p.duration)break;
-    await wait(50);
-   }
-   completedSeconds+=p.duration;
-   setExportProgress((completedSeconds/total)*100,completedSeconds);
-   draw(p,0,i);
+  const Mp4Muxer=await import('https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.2/build/mp4-muxer.mjs');
+  canvas=document.createElement('canvas');canvas.width=1920;canvas.height=1080;
+  const ctx=canvas.getContext('2d',{alpha:false});
+  const target=new Mp4Muxer.ArrayBufferTarget();
+  muxer=new Mp4Muxer.Muxer({target,video:{codec:'avc',width:1920,height:1080,frameRate:1},audio:{codec:'aac',sampleRate:48000,numberOfChannels:1},fastStart:'in-memory'});
+  const videoConfig={codec:'avc1.42001f',width:1920,height:1080,bitrate:5000000,framerate:1,latencyMode:'quality'};
+  const audioConfig={codec:'mp4a.40.2',sampleRate:48000,numberOfChannels:1,bitrate:96000};
+  const [vSupport,aSupport]=await Promise.all([VideoEncoder.isConfigSupported(videoConfig),AudioEncoder.isConfigSupported(audioConfig)]);
+  if(!vSupport.supported||!aSupport.supported)throw new Error('Este navegador não oferece codificação acelerada de vídeo e áudio MP4.');
+  const encoderErrors=[];
+  videoEncoder=new VideoEncoder({output:(chunk,meta)=>muxer.addVideoChunk(chunk,meta),error:e=>encoderErrors.push(e)});
+  audioEncoder=new AudioEncoder({output:(chunk,meta)=>muxer.addAudioChunk(chunk,meta),error:e=>encoderErrors.push(e)});
+  videoEncoder.configure(videoConfig);audioEncoder.configure(audioConfig);
+  const draw=(p,sec,index,elapsed)=>{
+   const W=1920,H=1080;ctx.fillStyle='#050507';ctx.fillRect(0,0,W,H);
+   const grad=ctx.createRadialGradient(W/2,H/2,50,W/2,H/2,900);grad.addColorStop(0,'#160d25');grad.addColorStop(1,'#050507');ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
+   ctx.strokeStyle='#38204f';ctx.lineWidth=4;ctx.beginPath();ctx.roundRect(90,70,W-180,H-140,42);ctx.stroke();
+   ctx.fillStyle='#a78bfa';ctx.font='800 38px system-ui';ctx.textAlign='center';ctx.fillText('ROUND',W/2,150);
+   ctx.fillStyle=p.phase==='DESCANSO'?'#c4b5fd':'#a78bfa';ctx.font='800 30px system-ui';ctx.fillText(p.phase,W/2,245);
+   const mins=String(Math.floor(sec/60)).padStart(2,'0'),secs=String(Math.max(0,Math.ceil(sec))%60).padStart(2,'0');
+   ctx.fillStyle='#f5f3ff';ctx.font='800 250px system-ui';ctx.fillText(mins+':'+secs,W/2,565);
+   ctx.fillStyle='#f5f3ff';ctx.font='700 52px system-ui';ctx.fillText(p.name,W/2,680);
+   ctx.fillStyle='#aaa0c0';ctx.font='32px system-ui';ctx.fillText('ETAPA '+(index+1)+' / '+sequence.length,W/2,755);
+   const barW=1250,barX=(W-barW)/2,barY=820;ctx.fillStyle='#21142f';ctx.fillRect(barX,barY,barW,12);ctx.fillStyle='#8b5cf6';ctx.fillRect(barX,barY,barW*Math.max(0,Math.min(1,elapsed/total)),12);
+  };
+  const starts=[];let cursor=0;sequence.forEach(p=>{starts.push(cursor);cursor+=p.duration});
+  const phaseAt=t=>{let i=0;while(i<sequence.length-1&&t>=starts[i]+sequence[i].duration)i++;return {p:sequence[i],i,phaseStart:starts[i],remaining:Math.max(0,sequence[i].duration-(t-starts[i]))}};
+  for(let t=0;t<total;t++){
+   if(encoderErrors.length)throw encoderErrors[0];
+   const state=phaseAt(t);draw(state.p,state.remaining,state.i,t);
+   const frame=new VideoFrame(canvas,{timestamp:t*1000000,duration:1000000});
+   videoEncoder.encode(frame,{keyFrame:t%5===0});frame.close();
+   if(t%Math.max(1,Math.ceil(total/100))===0){setProgress((t/total)*70,t);await new Promise(r=>setTimeout(r,0))}
   }
-  await wait(250);
-  recorder.stop();
-  await new Promise(resolve=>{recorder.onstop=resolve});
-  const blob=new Blob(chunks,{type:mime});
-  button.textContent='Vídeo pronto · iniciando download…';
-  hint.textContent='Vídeo gerado (100%). O navegador está iniciando o download.';
-  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='ROUND-treino-completo.'+(isMP4?'mp4':'webm');document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
-  alert(isMP4?'Vídeo MP4 gerado! Se o download não iniciar, verifique os downloads do navegador.':'Este navegador não codifica MP4 diretamente; foi gerado um vídeo WebM. Para TV, converta para MP4 em um computador.');
- }catch(e){console.error(e);if(recorder.state!=='inactive')recorder.stop();alert('Não foi possível gerar o vídeo neste navegador. Tente em um computador com Chrome ou Safari atualizado.')}
- finally{stream.getTracks().forEach(t=>t.stop());if(audioCtx)audioCtx.close().catch(()=>{});button.disabled=false;button.textContent='▣ Exportar vídeo para TV (MP4)';hint.textContent=originalHint}
+  await videoEncoder.flush();setProgress(75,total);
+  const chunkSeconds=0.1,framesPerChunk=4800,totalChunks=Math.ceil(total/chunkSeconds);
+  for(let ci=0;ci<totalChunks;ci++){
+   if(encoderErrors.length)throw encoderErrors[0];
+   const sampleStart=ci*framesPerChunk,count=Math.min(framesPerChunk,total*48000-sampleStart);
+   if(count<=0)break;
+   const pcm=new Float32Array(count),chunkStart=sampleStart/48000;
+   for(let j=0;j<count;j++){
+    const time=chunkStart+j/48000,state=phaseAt(Math.min(total-0.000001,time));
+    const elapsed=time-state.phaseStart,rem=state.p.duration-elapsed,sec=Math.ceil(rem);
+    if(sec>=1&&sec<=3&&rem>(sec-1)&&elapsed%1<0.20){
+     const local=elapsed%1;const envelope=Math.min(1,local/0.01)*Math.max(0,Math.min(1,(0.20-local)/0.04));
+     pcm[j]=0.22*envelope*Math.sin(2*Math.PI*1040*local);
+    }
+   }
+   const audioData=new AudioData({format:'f32',sampleRate:48000,numberOfFrames:count,numberOfChannels:1,timestamp:Math.round(sampleStart/48000*1000000),data:pcm});
+   audioEncoder.encode(audioData);audioData.close();
+   if(ci%Math.max(1,Math.ceil(totalChunks/25))===0){setProgress(75+(ci/totalChunks)*20,total);await new Promise(r=>setTimeout(r,0))}
+  }
+  await audioEncoder.flush();setProgress(97,total);
+  if(encoderErrors.length)throw encoderErrors[0];
+  muxer.finalize();
+  const blob=new Blob([target.buffer],{type:'video/mp4'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='ROUND-treino-completo.mp4';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+  setProgress(100,total);hint.textContent='Vídeo MP4 pronto e download iniciado.';
+  alert('Vídeo MP4 gerado! A exportação rápida terminou sem esperar o tempo real do treino.');
+ }catch(e){
+  console.error('Exportação rápida falhou:',e);
+  alert('A exportação rápida não funcionou neste navegador. Atualize o Safari ou tente em um computador. Detalhe: '+(e?.message||'erro desconhecido'));
+ }finally{
+  try{if(videoEncoder&&videoEncoder.state!=='closed')videoEncoder.close()}catch(e){}
+  try{if(audioEncoder&&audioEncoder.state!=='closed')audioEncoder.close()}catch(e){}
+  button.disabled=false;button.textContent='▣ Exportar vídeo para TV (MP4)';hint.textContent=originalHint;
+ }
 }
 
 $('exportVideo').onclick=exportWorkoutVideo;$('addBlock').onclick=addBlock;$('addRound').onclick=addRound;$('saveTimer').onclick=saveCurrentTimer;$('importTimerBtn').onclick=()=>$('importTimerFile').click();$('importTimerFile').onchange=e=>{importTimerFile(e.target.files?.[0]);e.target.value=''};$('play').onclick=toggle;$('next').onclick=()=>{advance();};$('prev').onclick=back;
