@@ -215,24 +215,40 @@ async function exportWorkoutVideo(){
  const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
  const button=$('exportVideo');button.disabled=true;button.textContent='Gravando vídeo… mantenha a página aberta';
  let cancelled=false;
+ let completedSeconds=0;
+ const exportStartedAt=performance.now();
+ const hint=$('exportHint');
+ const originalHint=hint.textContent;
+ const setExportProgress=(percent,elapsedSeconds)=>{
+  const pct=Math.max(0,Math.min(100,Math.floor(percent)));
+  button.textContent='Exportando vídeo… '+pct+'%';
+  hint.textContent='Gerando vídeo: '+pct+'% · '+fmt(elapsedSeconds)+' de '+fmt(total)+'. Mantenha esta página aberta.';
+ };
  try{
   recorder.start(1000);
+  setExportProgress(0,0);
   for(let i=0;i<sequence.length;i++){
    const p=sequence[i],start=performance.now();let lastBeep=0;
    while(true){
     const elapsed=(performance.now()-start)/1000,remaining=Math.max(0,p.duration-elapsed);
     draw(p,remaining,i);
+    const overallElapsed=Math.min(total,completedSeconds+elapsed);
+    setExportProgress((overallElapsed/total)*100,overallElapsed);
     const s=Math.ceil(remaining);
     if(s>=1&&s<=3&&s!==lastBeep){playBeep();lastBeep=s}
     if(elapsed>=p.duration)break;
     await wait(50);
    }
+   completedSeconds+=p.duration;
+   setExportProgress((completedSeconds/total)*100,completedSeconds);
    draw(p,0,i);
   }
   await wait(250);
   recorder.stop();
   await new Promise(resolve=>{recorder.onstop=resolve});
   const blob=new Blob(chunks,{type:mime});
+  button.textContent='Vídeo pronto · iniciando download…';
+  hint.textContent='Vídeo gerado (100%). O navegador está iniciando o download.';
   const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='ROUND-treino-completo.'+(isMP4?'mp4':'webm');document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
   alert(isMP4?'Vídeo MP4 gerado! Se o download não iniciar, verifique os downloads do navegador.':'Este navegador não codifica MP4 diretamente; foi gerado um vídeo WebM. Para TV, converta para MP4 em um computador.');
  }catch(e){console.error(e);if(recorder.state!=='inactive')recorder.stop();alert('Não foi possível gerar o vídeo neste navegador. Tente em um computador com Chrome ou Safari atualizado.')}
