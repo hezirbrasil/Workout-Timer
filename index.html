@@ -252,7 +252,7 @@ async function exportWorkoutVideo(){
   const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='ROUND-treino-completo.'+(isMP4?'mp4':'webm');document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
   alert(isMP4?'Vídeo MP4 gerado! Se o download não iniciar, verifique os downloads do navegador.':'Este navegador não codifica MP4 diretamente; foi gerado um vídeo WebM. Para TV, converta para MP4 em um computador.');
  }catch(e){console.error(e);if(recorder.state!=='inactive')recorder.stop();alert('Não foi possível gerar o vídeo neste navegador. Tente em um computador com Chrome ou Safari atualizado.')}
- finally{stream.getTracks().forEach(t=>t.stop());if(audioCtx)audioCtx.close().catch(()=>{});button.disabled=false;button.textContent='▣ Exportar vídeo para TV (MP4)'}
+ finally{stream.getTracks().forEach(t=>t.stop());if(audioCtx)audioCtx.close().catch(()=>{});button.disabled=false;button.textContent='▣ Exportar vídeo para TV (MP4)';hint.textContent=originalHint}
 }
 
 $('exportVideo').onclick=exportWorkoutVideo;$('addBlock').onclick=addBlock;$('addRound').onclick=addRound;$('saveTimer').onclick=saveCurrentTimer;$('importTimerBtn').onclick=()=>$('importTimerFile').click();$('importTimerFile').onchange=e=>{importTimerFile(e.target.files?.[0]);e.target.value=''};$('play').onclick=toggle;$('next').onclick=()=>{advance();};$('prev').onclick=back;
