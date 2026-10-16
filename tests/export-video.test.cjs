@@ -38,3 +38,43 @@ test('export checks browser recording support and provides WebM fallback messagi
 test('export downloads a file with an extension matching the selected recording format', () => {
   assert.match(html, /'ROUND-treino-completo\.'\+\(isMP4\?'mp4':'webm'\)/);
 });
+
+test('criação de bloco adiciona um bloco editável à aula', () => {
+  assert.match(html, /function addBlock\(\)\s*\{blocks\.push\(\{name:'Bloco '\+\(blocks\.length\+1\),open:true,rounds:\[\]\}\);save\(\);render\(\)\}/);
+  assert.match(html, /id="addBlock"/);
+});
+
+test('criação de round avulso fornece duração e descanso padrão editáveis', () => {
+  assert.match(html, /function addRound\(\)\s*\{const count=rounds\(\)\.length\+1;blocks\.push\(\{name:'Round avulso '\+count,open:true,standalone:true,rounds:\[\{name:'Round '\+count,duration:50,rest:10\}\]\}\);save\(\);render\(\)\}/);
+  assert.match(html, /id="addRound"/);
+});
+
+test('treinos montados são persistidos e recuperados no dispositivo', () => {
+  assert.match(html, /localStorage\.setItem\('round-fitness-v1',JSON\.stringify\(blocks\)\)/);
+  assert.match(html, /localStorage\.getItem\('round-fitness-v1'\)/);
+  assert.match(html, /function saveCurrentTimer\(\)/);
+  assert.match(html, /function loadSavedTimers\(\)/);
+});
+
+test('há presets padronizados para aulas MMA 3:30 e MMA 0:50', () => {
+  assert.match(html, /function createDefaultWorkout\(\)/);
+  assert.match(html, /name:'MMA 3:30'/);
+  assert.match(html, /function createMMA050Workout\(\)/);
+  assert.match(html, /name:'MMA 0:50'/);
+  assert.match(html, /function renderPredefinedTimers\(\)/);
+});
+
+test('o editor permite alterar nomes, tempo de trabalho e descanso', () => {
+  assert.match(html, /class="rname"/);
+  assert.match(html, /class="dur" type="number" min="1" max="3600"/);
+  assert.match(html, /class="rest" type="number" min="0" max="3600"/);
+  assert.match(html, /r\.duration=Math\.max\(1,Math\.min\(3600,Number\(e\.target\.value\)\|\|1\)\)/);
+  assert.match(html, /r\.rest=Math\.max\(0,Math\.min\(3600,Number\(e\.target\.value\)\|\|0\)\)/);
+});
+
+test('a aula pode ser salva, compartilhada por link e exportada como arquivo', () => {
+  assert.match(html, /id="saveTimer"/);
+  assert.match(html, /function shareSavedLink\(index\)/);
+  assert.match(html, /function exportSavedTimer\(index\)/);
+  assert.match(html, /id="importTimerBtn"/);
+});
