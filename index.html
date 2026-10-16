@@ -170,15 +170,22 @@ function back(){const list=rounds();if(!list.length)return;active=(active-1+list
 function tick(){const now=Date.now();if(!lastStamp)lastStamp=now;const delta=(now-lastStamp)/1000;lastStamp=now;remaining-=delta;const second=Math.ceil(remaining);if(second>=1&&second<=3&&second!==lastBeepSecond){beep();lastBeepSecond=second}if(remaining<=0){lastBeepSecond=null;const r=current();if(phaseMode==='work'&&Number(r?.rest)>0){phaseMode='rest';remaining=Number(r.rest)}else{phaseMode='work';const list=rounds();if(!list.length){stop();return}active=(active+1)%list.length;remaining=totalSeconds(current())}}renderTimer()}
 function toggle(){if(!rounds().length)return;if(running){stop();document.querySelector('.app').classList.remove('focus-mode');renderTimer()}else{prepareAudio();document.querySelector('.app').classList.add('focus-mode');running=true;lastStamp=Date.now();$('playLabel').textContent='PAUSAR';$('playIcon').innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>'; interval=setInterval(tick,100)}}
 
+function buildWorkoutTimeline(items){
+ const timeline=[];
+ (Array.isArray(items)?items:[]).forEach((r,index)=>{
+  const work=Math.max(1,Math.floor(Number(r&&r.duration)||50));
+  timeline.push({name:String(r&&r.name||('Round '+(index+1))),phase:'TRABALHO',duration:work});
+  const rest=Math.max(0,Math.floor(Number(r&&r.rest)||0));
+  if(rest>0)timeline.push({name:String(r&&r.name||('Round '+(index+1))),phase:'DESCANSO',duration:rest});
+ });
+ return timeline;
+}
+function getWorkoutDuration(items){
+ return buildWorkoutTimeline(items).reduce((sum,phase)=>sum+phase.duration,0);
+}
 async function exportWorkoutVideo(){
  if(running){alert('Pause o timer antes de exportar o vídeo.');return}
- const sequence=[];
- rounds().forEach((r,i)=>{
-  const work=Math.max(1,Math.floor(Number(r.duration)||50));
-  sequence.push({name:r.name||('Round '+(i+1)),phase:'TRABALHO',duration:work});
-  const rest=Math.max(0,Math.floor(Number(r.rest)||0));
-  if(rest>0)sequence.push({name:r.name||('Round '+(i+1)),phase:'DESCANSO',duration:rest});
- });
+ const sequence=buildWorkoutTimeline(rounds());
  if(!sequence.length){alert('Adicione rounds antes de exportar.');return}
  const total=sequence.reduce((s,p)=>s+p.duration,0);
  if(!window.VideoEncoder||!window.VideoFrame){
