@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 
 const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 
@@ -77,4 +78,66 @@ test('a aula pode ser salva, compartilhada por link e exportada como arquivo', (
   assert.match(html, /function shareSavedLink\(index\)/);
   assert.match(html, /function exportSavedTimer\(index\)/);
   assert.match(html, /id="importTimerBtn"/);
+});
+
+function loadTimingHelpers() {
+  const timelineSource = html.match(/function buildWorkoutTimeline\(items\)\s*\{[\s\S]*?\n\}/);
+  const durationSource = html.match(/function getWorkoutDuration\(items\)\s*\{[\s\S]*?\n\}/);
+  assert.ok(timelineSource, 'buildWorkoutTimeline must exist in the app');
+  assert.ok(durationSource, 'getWorkoutDuration must exist in the app');
+  const context = {};
+  vm.runInNewContext(timelineSource[0] + '\\n' + durationSource[0] +
+    '\\nglobalThis.timeline = buildWorkoutTimeline; globalThis.duration = getWorkoutDuration;', context);
+  return { timeline: context.timeline, duration: context.duration };
+}
+
+test('timeline builds work and rest phases in the correct order', () => {
+  const { timeline } = loadTimingHelpers();
+  assert.deepEqual(JSON.parse(JSON.stringify(timeline([
+    { name: 'Round 1', duration: 50, rest: 10 },
+    { name: 'Round 2', duration: 60, rest: 0 }
+  ]))), [
+    { name: 'Round 1', phase: 'TRABALHO', duration: 50 },
+    { name: 'Round 1', phase: 'DESCANSO', duration: 10 },
+    { name: 'Round 2', phase: 'TRABALHO', duration: 60 }
+  ]);
+});
+
+test('total class duration includes rests exactly once', () => {
+  const { duration } = loadTimingHelpers();
+  assert.equal(duration([
+    { name: 'Round 1', duration: 50, rest: 10 },
+    { name: 'Round 2', duration: 50, rest: 30 },
+    { name: 'Fim', duration: 60, rest: 0 }
+  ]), 200);
+});
+
+test('zero rest does not create an empty rest phase', () => {
+  const { timeline } = loadTimingHelpers();
+  const result = timeline([{ name: 'Troca', duration: 90, rest: 0 }]);
+  assert.equal(result.length, 1);
+  assert.equal(result[0].phase, 'TRABALHO');
+});
+
+test('active pause is represented as its own work phase', () => {
+  const { timeline } = loadTimingHelpers();
+  const result = timeline([
+    { name: 'MMA 4', duration: 50, rest: 10 },
+    { name: 'Pausa ativa', duration: 30, rest: 0 },
+    { name: 'MMA 5', duration: 50, rest: 10 }
+  ]);
+  assert.deepEqual(JSON.parse(JSON.stringify(result.map(p => [p.name, p.phase, p.duration]))), [
+    ['MMA 4', 'TRABALHO', 50],
+    ['MMA 4', 'DESCANSO', 10],
+    ['Pausa ativa', 'TRABALHO', 30],
+    ['MMA 5', 'TRABALHO', 50],
+    ['MMA 5', 'DESCANSO', 10]
+  ]);
+});
+
+test('invalid or missing durations use safe defaults and empty workouts total zero', () => {
+  const { timeline, duration } = loadTimingHelpers();
+  assert.equal(timeline([{ name: 'Round' }])[0].duration, 50);
+  assert.equal(timeline([{ name: 'Round', duration: -4, rest: -3 }])[0].duration, 1);
+  assert.equal(duration([]), 0);
 });
