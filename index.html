@@ -29,7 +29,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 <div class="section-head"><h2>SEU TREINO</h2><span class="muted" id="summary">0 blocos · 0 rounds</span></div>
 <div id="blocks" class="blocks"></div>
 <div class="section-head"><h2>CRIAR BLOCO DE EXERCÍCIOS</h2><span class="muted">Escolha um modelo</span></div>
-<div class="bottom-actions"><button class="btn main" id="addExerciseContinuous">＋ Bloco 3:30 + 40s</button><button class="btn main" id="addExerciseIntervals">＋ Bloco 4 × 50s</button></div>
+<div class="bottom-actions"><button class="btn main" id="addExerciseContinuous">＋ Bloco 3:30 + 40s</button><button class="btn main" id="addExerciseIntervals">＋ Bloco 4 × 50s</button><button class="btn main" id="addTransition">＋ Troca 1:30</button></div>
 <div class="bottom-actions"><button class="btn" id="addBlock">＋ Bloco personalizado</button><button class="btn" id="addRound">＋ Round avulso</button><button class="btn ghost" id="clearAll">Limpar treino</button></div>
 <div class="bottom-actions"><button class="btn" id="exportVideo" style="width:100%">⚡ Exportar vídeo rápido (MP4)</button></div><p class="hint" id="exportHint" style="margin-top:8px">Exportação rápida: gera o treino completo em MP4 horizontal 720p, otimizado para celulares.</p>
 <section class="saved-section"><div class="section-head"><h2>TREINOS PRÉ-DEFINIDOS</h2><span class="muted">2 treinos</span></div><div id="predefinedTimers" class="saved-list"></div></section><section class="saved-section"><div class="section-head"><h2>TIMERS SALVOS</h2><span class="muted" id="savedCount">0 salvos</span></div><div id="savedTimers" class="saved-list"></div><button class="btn" id="saveTimer" style="width:100%;margin-top:10px">＋ Salvar timer montado</button><input id="importTimerFile" type="file" accept=".json,.roundtimer.json,application/json" hidden><button class="btn ghost" id="importTimerBtn" style="width:100%;margin-top:8px">＋ Importar timer de arquivo</button></section>
@@ -166,6 +166,12 @@ function moveRound(bi,ri,d){const j=ri+d;if(j<0||j>=blocks[bi].rounds.length)ret
 function moveRoundToEdge(bi,ri,edge){if(!blocks[bi]||ri<0||ri>=blocks[bi].rounds.length)return;const item=blocks[bi].rounds.splice(ri,1)[0];if(edge==='start')blocks[bi].rounds.unshift(item);else blocks[bi].rounds.push(item);save();render()}
 function moveBlockToEdge(bi,edge){if(bi<0||bi>=blocks.length)return;const item=blocks.splice(bi,1)[0];if(edge==='start')blocks.unshift(item);else blocks.push(item);save();render()}
 function addBlock(){blocks.push({name:'Bloco '+(blocks.length+1),open:true,rounds:[]});save();render()}
+function addTransitionBlock(){
+ blocks.push({name:'Troca',open:false,rounds:[{name:'Troca',duration:90,rest:0}]});
+ save();render();
+ const last=$('blocks').lastElementChild;
+ if(last)last.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
 function addExerciseBlock(model){
  const number=blocks.length+1;
  let block;
@@ -286,7 +292,7 @@ async function exportWorkoutVideo(){
  }
 }
 
-$('exportVideo').onclick=exportWorkoutVideo;$('addBlock').onclick=addBlock;$('addExerciseContinuous').onclick=()=>addExerciseBlock('continuous');$('addExerciseIntervals').onclick=()=>addExerciseBlock('intervals');$('addRound').onclick=addRound;$('saveTimer').onclick=saveCurrentTimer;$('importTimerBtn').onclick=()=>$('importTimerFile').click();$('importTimerFile').onchange=e=>{importTimerFile(e.target.files?.[0]);e.target.value=''};$('play').onclick=toggle;$('next').onclick=()=>{advance();};$('prev').onclick=back;
+$('exportVideo').onclick=exportWorkoutVideo;$('addBlock').onclick=addBlock;$('addExerciseContinuous').onclick=()=>addExerciseBlock('continuous');$('addExerciseIntervals').onclick=()=>addExerciseBlock('intervals');$('addTransition').onclick=addTransitionBlock;$('addRound').onclick=addRound;$('saveTimer').onclick=saveCurrentTimer;$('importTimerBtn').onclick=()=>$('importTimerFile').click();$('importTimerFile').onchange=e=>{importTimerFile(e.target.files?.[0]);e.target.value=''};$('play').onclick=toggle;$('next').onclick=()=>{advance();};$('prev').onclick=back;
 $('reset').onclick=()=>{stop();phaseMode='work';remaining=current()?totalSeconds(current()):0;document.querySelector('.app').classList.remove('focus-mode');renderTimer()};
 $('clearAll').onclick=()=>{if(blocks.length&&confirm('Apagar todos os blocos e rounds?')){stop();document.querySelector('.app').classList.remove('focus-mode');blocks=[];active=0;remaining=0;save();render()}};
 load();refreshActiveOfficialPreset();render();try{loadSavedTimers();ensureDefaultWorkout();renderPredefinedTimers();renderSavedTimers();checkSharedTimerLink()}catch(e){console.error('Erro ao carregar timers salvos:',e)}
